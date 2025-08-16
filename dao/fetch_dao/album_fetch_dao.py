@@ -3,6 +3,7 @@
 Contains the Fetch DAO (Data Access Object) for all operations related to Spotify albums.
 Each method corresponds to a Spotify API REST endpoint returning albums or their tracks.
 """
+
 from typing import Any, Dict, List, Set
 
 from pydantic import ValidationError
@@ -29,10 +30,7 @@ class AlbumFetchDAO(BaseFetchDAO):
     """
 
     @staticmethod
-    def fetch_album(
-        access_token: str,
-        album_id: str
-    ) -> Album:
+    def fetch_album(access_token: str, album_id: str) -> Album:
         """Retrieve a single album by its ID.
 
         Keyword arguments:
@@ -44,10 +42,7 @@ class AlbumFetchDAO(BaseFetchDAO):
         return Album.model_validate(data)
 
     @staticmethod
-    def fetch_albums(
-        access_token: str,
-        album_ids: List[str] | Set[str]
-    ) -> List[Album]:
+    def fetch_albums(access_token: str, album_ids: List[str] | Set[str]) -> List[Album]:
         """Retrieve multiple albums by their IDs.
 
         Keyword arguments:
@@ -57,7 +52,7 @@ class AlbumFetchDAO(BaseFetchDAO):
         query = ",".join(album_ids)
         data = AlbumFetchDAO._request(f"{SPOTIFY_ALBUMS_URL}?ids={query}", access_token)
         releases = []
-        for item in data.get('albums', []):
+        for item in data.get("albums", []):
             try:
                 release = Album.model_validate(item)
                 releases.append(release)
@@ -67,10 +62,7 @@ class AlbumFetchDAO(BaseFetchDAO):
 
     @staticmethod
     def fetch_album_tracks(
-        access_token: str,
-        album_id: str,
-        limit: int = 20,
-        offset: int = 0
+        access_token: str, album_id: str, limit: int = 20, offset: int = 0
     ) -> Tracks:
         """Retrieve the tracks of a given album.
 
@@ -87,9 +79,7 @@ class AlbumFetchDAO(BaseFetchDAO):
 
     @staticmethod
     def fetch_saved_albums(
-        access_token: str,
-        limit: int = 20,
-        offset: int = 0
+        access_token: str, limit: int = 20, offset: int = 0
     ) -> Albums:
         """Retrieve the user's saved albums.
 
@@ -104,8 +94,7 @@ class AlbumFetchDAO(BaseFetchDAO):
 
     @staticmethod
     def fetch_check_album_is_saved(
-        access_token: str,
-        album_ids: List[str]
+        access_token: str, album_ids: List[str]
     ) -> List[bool]:
         """Check if specified albums are saved by the user.
 
@@ -114,5 +103,7 @@ class AlbumFetchDAO(BaseFetchDAO):
         album_ids -- list of album IDs to check
         """
         query = ",".join(album_ids)
-        data = AlbumFetchDAO._request(f"{SPOTIFY_CHECK_SAVED_ALBUMS_URL}?ids={query}", access_token)
+        data = AlbumFetchDAO._request(
+            f"{SPOTIFY_CHECK_SAVED_ALBUMS_URL}?ids={query}", access_token
+        )
         return data

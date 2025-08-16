@@ -3,6 +3,7 @@
 Contains the Fetch DAO (Data Access Object) for all operations related to Spotify artists.
 Each method corresponds to a Spotify API REST endpoint returning information about artists.
 """
+
 from typing import Any, Dict, List, Optional, Set
 
 from pydantic import ValidationError
@@ -24,24 +25,23 @@ class ArtistFetchDAO(BaseFetchDAO):
     Groups methods to retrieve a single artist, multiple artists,
     user's top artists, and artist follow checks.
     """
+
     @staticmethod
-    def fetch_artist(
-        access_token: str,
-        artist_id: str
-    ) -> Artist:
+    def fetch_artist(access_token: str, artist_id: str) -> Artist:
         """Retrieve an artist by its ID.
 
         Keyword arguments:
         access_token -- a valid Spotify access token
         artist_id -- the ID of the artist to retrieve
         """
-        data = ArtistFetchDAO._request(f"{SPOTIFY_ARTISTS_URL}/{artist_id}", access_token)
+        data = ArtistFetchDAO._request(
+            f"{SPOTIFY_ARTISTS_URL}/{artist_id}", access_token
+        )
         return Artist.model_validate(data)
-    
+
     @staticmethod
     def fetch_artists(
-        access_token: str,
-        artist_ids: List[str] | Set[str]
+        access_token: str, artist_ids: List[str] | Set[str]
     ) -> List[Artist]:
         """Retrieve multiple artists by their IDs.
 
@@ -50,9 +50,11 @@ class ArtistFetchDAO(BaseFetchDAO):
         artist_ids -- a list or set of artist IDs to retrieve
         """
         query = ",".join(artist_ids)
-        data = ArtistFetchDAO._request(f"{SPOTIFY_ARTISTS_URL}?ids={query}", access_token)
+        data = ArtistFetchDAO._request(
+            f"{SPOTIFY_ARTISTS_URL}?ids={query}", access_token
+        )
         artists = []
-        for item in data.get('artists', []):
+        for item in data.get("artists", []):
             try:
                 artist = Artist.model_validate(item)
                 artists.append(artist)
@@ -62,9 +64,7 @@ class ArtistFetchDAO(BaseFetchDAO):
 
     @staticmethod
     def fetch_top_artists(
-        access_token: str,
-        time_range: str = "medium_term",
-        limit: int = 20
+        access_token: str, time_range: str = "medium_term", limit: int = 20
     ) -> Artists:
         """Retrieve the user's top artists for a specified time range.
 
@@ -76,12 +76,10 @@ class ArtistFetchDAO(BaseFetchDAO):
         params: Dict[str, Any] = {"time_range": time_range, "limit": limit}
         data = ArtistFetchDAO._request(SPOTIFY_TOP_ARTISTS_URL, access_token, params)
         return Artists.model_validate(data)
-    
+
     @staticmethod
     def fetch_followed_artists(
-        access_token: str,
-        limit: int = 20,
-        after: Optional[str] = None
+        access_token: str, limit: int = 20, after: Optional[str] = None
     ) -> Artists:
         """Retrieve a paginated list of artists followed by the user.
 
@@ -93,13 +91,14 @@ class ArtistFetchDAO(BaseFetchDAO):
         params: Dict[str, Any] = {"type": "artist", "limit": limit}
         if after:
             params["after"] = after
-        data = ArtistFetchDAO._request(SPOTIFY_FOLLOWED_ARTISTS_URL, access_token, params)
-        return Artists.model_validate(data['artists'])
+        data = ArtistFetchDAO._request(
+            SPOTIFY_FOLLOWED_ARTISTS_URL, access_token, params
+        )
+        return Artists.model_validate(data["artists"])
 
     @staticmethod
     def fetch_check_user_follows_artists(
-        access_token: str,
-        artist_ids: List[str]
+        access_token: str, artist_ids: List[str]
     ) -> List[bool]:
         """Check if the user follows specified artists.
 
@@ -108,5 +107,7 @@ class ArtistFetchDAO(BaseFetchDAO):
         artist_ids -- list of artist IDs to check
         """
         query = ",".join(artist_ids)
-        SPOTIFY_ARTISTS_URL = f"{SPOTIFY_CHECK_FOLLOWED_ARTISTS_URL_TEMPLATE}&ids={query}"
+        SPOTIFY_ARTISTS_URL = (
+            f"{SPOTIFY_CHECK_FOLLOWED_ARTISTS_URL_TEMPLATE}&ids={query}"
+        )
         return ArtistFetchDAO._request(SPOTIFY_ARTISTS_URL, access_token)

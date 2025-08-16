@@ -19,17 +19,13 @@ class SpotifyWebScraperDAO(BaseScrapDAO):
             "operationName": "getTrack",
             "extensions": {"persistedQuery": {"version": 1, "sha256Hash": self.hash_value}},
         }        
-        resp = self.session.post(SPOTIFY_INTERN_API, json=payload)
+        resp = self.sess.post(SPOTIFY_INTERN_API, json=payload)
         return resp.text
 
     def get_artist_monthly_listeners(self, artist_id) -> int:
         pass
     
-    def get_client_token() -> str:
-        pass
 
-    def get_access_token() -> str:
-        pass
         
     
     

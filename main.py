@@ -1,37 +1,39 @@
 # main.py
 
+from dao.service import BrowserManager, get_tokens
 from streaming_history_analyser.ingest import load_streaming_history_folder
 
 
-from dao.fetch_dao.track_fetch_dao import TrackFetchDAO
+from dao.db_dao.spotify_track_dao import SpotifyTrackDAO
 from dao.scrap_dao.spotify_web_scraper import SpotifyWebScraperDAO
 
 from selenium import webdriver
-from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from constants.scraping import SPOTIFY_BASE_URL, TRACK_URL
 
 import requests
 
 def main():
     track_id = '5GT7fRtPrfhjJScixSFdZW'
     
-    desired_capabilities = DesiredCapabilities.CHROME
-    desired_capabilities["goog:loggingPrefs"] = {"performance": "ALL"}
-
-    # Create the webdriver object and pass the arguments
-    options = webdriver.ChromeOptions()
-
-    # Chrome will start in Headless mode
-    options.add_argument('headless')
-
-    # Ignores any certificate errors if there is any
-    options.add_argument("--ignore-certificate-errors")
+    bm = BrowserManager()
+    bm.open_page(SPOTIFY_BASE_URL)
+    bm.consent_cookies()
+    bm.open_page(TRACK_URL+track_id)
+    logs = bm.get_cdp_log()
+    client_token, access_token, hash_value = get_tokens(logs)
+    print(get_tokens(bm.get_cdp_log()))
+    cookies = bm.get_cookies()
+    user_agent = bm.get_user_agent()
+    bm.quit_driver()
+    web_scraper = SpotifyWebScraperDAO(access_token, client_token, user_agent, hash_value, cookies)
     
-    wd = webdriver.Chrome()
-    session = requests.Session()
+    spotify_tracks = SpotifyTrackDAO.get_all_track()
+    for i in range(100):
+        if web_scraper.get_track_stream(spotify_tracks[i].spotify_id):
+            print(f'{i} : OK')
+        else:
+            print('NOP')
     
-    web_scraper = SpotifyWebScraperDAO(session, wd)
-    print(web_scraper.get_track_stream('61n0wsxweHnJOYyjMlMiPm'))
-    wd.quit()
     
     
 

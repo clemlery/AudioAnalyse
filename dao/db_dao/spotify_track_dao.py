@@ -28,7 +28,7 @@ class SpotifyTrackDAO(BaseDbDAO):
     
     @staticmethod
     def get_all_track() -> List[SpotifyTrack]:
-        return session.query(SpotifyTrack.id).all()
+        return session.query(SpotifyTrack).all()
     
     @staticmethod
     def get_spotify_track_by_spotify_id(spotify_id : str) -> Optional[SpotifyTrack]:

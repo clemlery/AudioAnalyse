@@ -23,17 +23,16 @@ from constants.api import (
     SPOTIFY_PLAYLIST_TRACKS_URL_TEMPLATE,
 )
 
+
 class TrackFetchDAO(BaseFetchDAO):
     """
     Data Access Object for Spotify tracks.
     Groups methods to retrieve tracks, saved tracks, playback history,
     top tracks, and playlist items via the Spotify API.
     """
+
     @staticmethod
-    def fetch_track(
-        access_token: str,
-        track_id: str
-    ) -> Track:
+    def fetch_track(access_token: str, track_id: str) -> Track:
         """Retrieve a single track by its ID.
 
         Keyword arguments:
@@ -44,10 +43,7 @@ class TrackFetchDAO(BaseFetchDAO):
         return Track.model_validate(data)
 
     @staticmethod
-    def fetch_tracks(
-        access_token: str,
-        track_ids: List[str] | Set[str]
-    ) -> List[Track]:
+    def fetch_tracks(access_token: str, track_ids: List[str] | Set[str]) -> List[Track]:
         """Retrieve multiple tracks by their IDs.
 
         Keyword arguments:
@@ -57,7 +53,7 @@ class TrackFetchDAO(BaseFetchDAO):
         query = ",".join(track_ids)
         data = TrackFetchDAO._request(f"{SPOTIFY_TRACKS_URL}?ids={query}", access_token)
         tracks = []
-        for item in data.get('tracks', []):
+        for item in data.get("tracks", []):
             try:
                 track = Track.model_validate(item)
                 tracks.append(track)
@@ -70,7 +66,7 @@ class TrackFetchDAO(BaseFetchDAO):
         access_token: str,
         market: Optional[str] = None,
         limit: int = 20,
-        offset: int = 0
+        offset: int = 0,
     ) -> Tracks:
         """Retrieve the user's saved tracks.
 
@@ -88,8 +84,7 @@ class TrackFetchDAO(BaseFetchDAO):
 
     @staticmethod
     def fetch_check_track_is_saved(
-        access_token: str,
-        track_ids: List[str]
+        access_token: str, track_ids: List[str]
     ) -> List[bool]:
         """Check if specified tracks are saved by the user.
 
@@ -98,7 +93,9 @@ class TrackFetchDAO(BaseFetchDAO):
         track_ids -- list of track IDs to check
         """
         query = ",".join(track_ids)
-        data = TrackFetchDAO._request(f"{SPOTIFY_TRACK_IS_SAVED_URL}?ids={query}", access_token)
+        data = TrackFetchDAO._request(
+            f"{SPOTIFY_TRACK_IS_SAVED_URL}?ids={query}", access_token
+        )
         return data
 
     @staticmethod
@@ -106,7 +103,7 @@ class TrackFetchDAO(BaseFetchDAO):
         access_token: str,
         limit: int = 20,
         after: Optional[str] = None,
-        before: Optional[str] = None
+        before: Optional[str] = None,
     ) -> RecentlyPlayedTracks:
         """Retrieve the user's playback history.
 
@@ -121,13 +118,13 @@ class TrackFetchDAO(BaseFetchDAO):
             params["after"] = after
         elif before:
             params["before"] = before
-        data = TrackFetchDAO._request(SPOTIFY_RECENT_PLAY_HISTORY_URL, access_token, params)
+        data = TrackFetchDAO._request(
+            SPOTIFY_RECENT_PLAY_HISTORY_URL, access_token, params
+        )
         return RecentlyPlayedTracks.model_validate(data)
 
     def fetch_top_tracks(
-        access_token: str,
-        time_range: str = "medium_term",
-        limit: int = 20
+        access_token: str, time_range: str = "medium_term", limit: int = 20
     ) -> Tracks:
         """Retrieve the user's top tracks for a specified time range.
 
@@ -147,7 +144,7 @@ class TrackFetchDAO(BaseFetchDAO):
         fields: Optional[str] = None,
         limit: int = 20,
         offset: int = 0,
-        additional_types: str = 'track'
+        additional_types: str = "track",
     ) -> List[PlaylistTrack]:
         """Retrieve items from a given playlist.
 
@@ -160,7 +157,11 @@ class TrackFetchDAO(BaseFetchDAO):
         offset -- offset for pagination (default 0)
         additional_types -- types of additional items to include (default 'track')
         """
-        params: Dict[str, Any] = {"limit": limit, "offset": offset, "additional_types": additional_types}
+        params: Dict[str, Any] = {
+            "limit": limit,
+            "offset": offset,
+            "additional_types": additional_types,
+        }
         if market:
             params["market"] = market
         if fields:
