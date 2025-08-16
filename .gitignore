@@ -1,0 +1,20 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Ignoring log folder 
+log/
+
+# Ignoring all folders from data excepting the font folder 
+csv/
+test/
+uploads/
+
+
