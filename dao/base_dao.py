@@ -5,9 +5,7 @@ from typing import Callable, Optional, Dict, Any
 import requests
 from functools import wraps
 import re
-from selenium.webdriver.common.by import By
-import time
-import json
+
 
 from constants.scraping import SPOTIFY_BASE_URL, TRACK_URL
 from dao.service import get_class_that_defined_method
@@ -130,9 +128,9 @@ class BaseScrapDAO(BaseDAO):
         self.sess = self.sess
 
     # We apply the logging decorator to all subclasses
-    # def __init_subclass__(cls, **kwargs):
-    #     super().__init_subclass__(**kwargs)
-    #     for attr, value in cls.__dict__.items():
-    #         if callable(value) and not value.__name__.startswith('__') and isinstance(value, staticmethod):
-    #             func = value.__func__
-    #             setattr(cls, attr, staticmethod(logging_func_fetch_dao(func)))
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        for attr, value in cls.__dict__.items():
+            if callable(value) and not value.__name__.startswith('__'):
+                func = value.__func__
+                setattr(cls, attr, logging_func_fetch_dao(func))

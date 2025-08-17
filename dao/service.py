@@ -7,8 +7,6 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 from constants.scraping import (
     COOKIE_BUTTON_ID,
-    SPOTIFY_BASE_URL,
-    TRACK_URL,
     WEBDRIVER_DELAY,
 )
 
@@ -67,7 +65,7 @@ class BrowserManager:
         return cookies
 
 
-def get_tokens(logs: dict) -> None|Tuple[str]:
+def get_tokens(searched_uri : str, logs: dict) -> None|Tuple[str]:
     for log in logs:
         msg = json.loads(log["message"]).get("message", {})
         if msg.get("method") == "Network.requestWillBeSent":
@@ -88,7 +86,7 @@ def get_tokens(logs: dict) -> None|Tuple[str]:
                 continue
 
             uri = post_json.get("variables", {}).get("uri", "")
-            if not uri.startswith("spotify:track"):
+            if not uri.startswith(searched_uri):
                 continue
 
             client_token = headers.get("client-token")

@@ -17,6 +17,7 @@ class Track(Base):
     name = Column(String(255), nullable=False)
     duration_ms = Column(Integer, nullable=False)
     
+    
     streams = relationship("TrackStream", back_populates="track")
     artists = relationship("Artist", secondary=track_artist, back_populates="tracks")
     appearances = relationship("SpotifyTrack", back_populates="canonical")

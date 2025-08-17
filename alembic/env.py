@@ -18,6 +18,7 @@ from models.sql_alchemy_models.artist_sql_model import Artist
 from models.sql_alchemy_models.track_stream_sql_model import TrackStream
 from models.sql_alchemy_models.track_stream_day_sql_model import TrackStreamDay
 from models.sql_alchemy_models.user_sql_model import User
+from models.sql_alchemy_models.metrics import TrackMetricsSnapshot, ArtistMetricsSnapshot
 
 
 
