@@ -7,7 +7,7 @@ from constants.scraping import SPOTIFY_INTERN_API
 class SpotifyArtistScraperDAO(BaseScrapDAO):
     def get_artist_monthly_listeners(self, artist_id: str) -> None | int:
         payload = {
-            "variables": {"uri": f"spotify:artist:{artist_id}"},
+            "variables": {"uri": f"spotify:artist:{artist_id}", "locale": "fr"},
             "operationName": "queryArtistOverview",
             "extensions": {
                 "persistedQuery": {"version": 1, "sha256Hash": self.hash_value}

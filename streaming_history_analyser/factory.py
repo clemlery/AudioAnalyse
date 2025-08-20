@@ -38,10 +38,29 @@ class ScraperContext:
     artist_hash: str
     track_client_token: str
     track_hash: str
-    cookies: dict
+    cookies: list[dict]
     user_agent: str
     # Optional: expiration date (if you want to invalidate the cache after some delay)
     expires_at: Optional[datetime] = None
+    
+    def __str__(self):
+        def shorten(value: str, length: int = 9) -> str:
+            if not value:
+                return "None"
+            return value[:length] + "..." if len(value) > length else value
+        
+        return (
+            f"ScraperContext(\n"
+            f"  access_token={self.access_token},\n"
+            f"  artist_client_token={self.artist_client_token},\n"
+            f"  artist_hash={self.artist_hash},\n"
+            f"  track_client_token={self.track_client_token},\n"
+            f"  track_hash={self.track_hash},\n"
+            f"  cookies={' , '.join([f'{key}:{value}' for d in self.cookies for key,value in d.items()])},\n"
+            f"  user_agent='{self.user_agent}',\n"
+            f"  expires_at={self.expires_at}\n"
+            f")"
+        )
 
 
 # =============================

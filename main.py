@@ -2,8 +2,8 @@
 
 from streaming_history_analyser.ingest import load_streaming_history_folder
 
-
 def main():
+    
     load_streaming_history_folder()
 
 

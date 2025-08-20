@@ -22,4 +22,4 @@ class Track(Base):
     artists = relationship("Artist", secondary=track_artist, back_populates="tracks")
     appearances = relationship("SpotifyTrack", back_populates="canonical")
     stream_day = relationship("TrackStreamDay", back_populates="track")
-    
+    track_metrics = relationship("TrackMetricsSnapshot", back_populates="track")

@@ -132,5 +132,4 @@ class BaseScrapDAO(BaseDAO):
         super().__init_subclass__(**kwargs)
         for attr, value in cls.__dict__.items():
             if callable(value) and not value.__name__.startswith('__'):
-                func = value.__func__
-                setattr(cls, attr, logging_func_fetch_dao(func))
+                setattr(cls, attr, logging_func_fetch_dao(value))

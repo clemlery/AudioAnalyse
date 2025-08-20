@@ -17,7 +17,7 @@ class TrackMetricsSnapshotDAO(BaseDbDAO):
             track_metrics = TrackMetricsSnapshot(
                 track_id=track_id,
                 playcount=playcount,
-                collectet_at=datetime.now()
+                collected_at=datetime.now()
             )
             session.add(track_metrics)
 
@@ -27,7 +27,7 @@ class TrackMetricsSnapshotDAO(BaseDbDAO):
         playcount : int
     ) -> None:
         
-        track_metrics = TrackMetricsSnapshotDAO.get_track_metric_by_id(id)
+        track_metrics = TrackMetricsSnapshotDAO.get_track_metrics_by_id(id)
         
         if track_metrics :
             session.expunge(track_metrics)
@@ -40,7 +40,7 @@ class TrackMetricsSnapshotDAO(BaseDbDAO):
         return session.query(TrackMetricsSnapshot).all()
     
     @staticmethod
-    def get_track_metric_by_id(id : int) -> TrackMetricsSnapshot:
+    def get_track_metrics_by_id(id : int) -> TrackMetricsSnapshot:
         return session.query(TrackMetricsSnapshot).fiter(TrackMetricsSnapshot.id == id).first()
 
     @staticmethod
@@ -54,13 +54,13 @@ class ArtistMetricsSnapshotDAO(BaseDbDAO):
         monthly_listeners : int
     ) -> None:
         
-        artist_metrics = ArtistMetricsSnapshotDAO.get_artist_metric_by_artist_id(artist_id)
+        artist_metrics = ArtistMetricsSnapshotDAO.get_artist_metrics_by_artist_id(artist_id)
         
         if artist_metrics is None:
-            artist_metrics = TrackMetricsSnapshot(
+            artist_metrics = ArtistMetricsSnapshot(
                 artist_id=artist_id,
                 monthly_listeners=monthly_listeners,
-                collectet_at=datetime.now()
+                collected_at=datetime.now()
             )
             session.add(artist_metrics)
 

@@ -23,4 +23,4 @@ class Artist(Base):
     
     releases = relationship('Release', back_populates='artists', secondary=release_artist)
     tracks = relationship('Track', secondary=track_artist, back_populates='artists')
-
+    artist_metrics = relationship('ArtistMetricsSnapshot', back_populates='artist')

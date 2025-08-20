@@ -17,7 +17,7 @@ class SpotifyTrackScraperDAO(BaseScrapDAO):
         resp.raise_for_status()
         data: dict[str, Any] = resp.json()
         try:
-            ml = data["data"]["trackUnion"]["playcount"]
+            ml = int(data["data"]["trackUnion"]["playcount"])
             return ml if isinstance(ml, int) else None
         except (KeyError, TypeError):
             return None

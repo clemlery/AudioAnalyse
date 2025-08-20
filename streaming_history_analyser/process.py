@@ -1,6 +1,6 @@
 # process.py
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 from auth import ConfigAuth
 from constants.service import RELEASE_TYPE, UPLOADS_PATH
 
@@ -33,7 +33,7 @@ from config import logger
 
 # Other imports
 from config import session
-from sqlalchemy import Tuple, select
+from sqlalchemy import select
 from models.data_class_models.track import Track
 from streaming_history_analyser.factory import BrowserTokenSource, ScraperFactory
 from streaming_history_analyser.service import (
@@ -84,9 +84,9 @@ def _process_artists(
     for chunk in chunk_list(list(new_artists), batch_size):
         artists = ArtistFetchDAO.fetch_artists(token, chunk)
         for art in artists:
-            ArtistDAO.add_artist(art)
+            artist_obj = ArtistDAO.add_artist(art)
             monthly_listeners = artist_scraper.get_artist_monthly_listeners(art.id)
-            ArtistMetricsSnapshotDAO.add_artist_metrics(art.id, monthly_listeners)
+            ArtistMetricsSnapshotDAO.add_artist_metrics(artist_obj.id, monthly_listeners)
             seen_artists.add(art.id)
 
 
@@ -117,7 +117,7 @@ def _process_tracks(tracks: list[Track], track_scraper : SpotifyTrackScraperDAO,
         ) or TrackDAO.add_track(t)
         
         playcount = track_scraper.get_track_playcount(t.id)
-        TrackMetricsSnapshotDAO.add_or_update_track_metric(track_obj.id, playcount)
+        TrackMetricsSnapshotDAO.add_track_metrics(track_obj.id, playcount)
         
         if not SpotifyTrackDAO.get_spotify_track_by_spotify_id(t.id):
             SpotifyTrackDAO.add_spotify_track(
@@ -244,7 +244,7 @@ def _update_loop_streaks(
 
 def _persist_stream(track_id: int, user_id: int, meta: dict) -> None:
     """Insert one TrackStream row."""
-    TrackStreamDAO.add_stream_track(
+    TrackStreamDAO.add_or_update_stream_track(
         track_id,
         user_id,
         meta["done"],
@@ -300,7 +300,7 @@ def _process_stream_batch(records, user_id):
             "loop_streak_day": loop_streak_day,
             "date": rec["date"],
             "datetime": rec["datetime"],
-            "duration_ms": rec["duration_ms"],
+            "duration_ms": track.duration_ms
         }
 
         try:
