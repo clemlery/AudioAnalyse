@@ -178,22 +178,26 @@ def _process_metadata(tracks, token, seen_artists, seen_releases, seen_spotify_t
     _associate_rows(tracks)
 
 
-def _parse_record(raw: Dict[str, Any]) -> dict:
+def _parse_record(raw: Dict[str, Any]) -> dict|None:
     """Normalize one raw record into a compact dict expected by downstream helpers."""
     ts = raw.get("ts")
     # Datetime parsing: accept ISO or "%Y-%m-%d %H:%M:%S" like strings
     dt = _parse_datetime(ts)
-    return {
-        "done": raw.get("reason_end") == "trackdone",
-        "skip": bool(raw.get("skipped")),
-        "click": raw.get("reason_start") == "clickrow",
-        "name": raw.get("master_metadata_track_name"),
-        "artist": raw.get("master_metadata_album_artist_name"),
-        "id": raw.get("spotify_track_uri", "").split(":")[2],
-        "ms_played": int(raw.get("ms_played") or 0),
-        "datetime": dt,
-        "date": (dt.date() if isinstance(dt, datetime) else None),
-    }
+    id = raw.get("spotify_track_uri", None)
+    if id == None:
+        return None
+    else:
+        return {
+            "done": raw.get("reason_end") == "trackdone",
+            "skip": bool(raw.get("skipped")),
+            "click": raw.get("reason_start") == "clickrow",
+            "name": raw.get("master_metadata_track_name"),
+            "artist": raw.get("master_metadata_album_artist_name"),
+            "id": id.split(":")[2],
+            "ms_played": int(raw.get("ms_played") or 0),
+            "datetime": dt,
+            "date": (dt.date() if isinstance(dt, datetime) else None),
+        }
 
 
 def _parse_datetime(value: str) -> Optional[datetime]:
@@ -251,7 +255,6 @@ def _persist_stream(track_id: int, user_id: int, meta: dict) -> None:
         meta["skip"],
         meta["click"],
         meta["loop_streak"],
-        meta["date"],
         meta["datetime"],
         meta["duration_ms"],
     )
@@ -280,6 +283,7 @@ def _process_stream_batch(records, user_id):
 
     for raw in records:
         rec = _parse_record(raw)
+        if rec == None: continue
         # Resolve track
         track = _resolve_track_obj(rec["id"])
         if track is None:

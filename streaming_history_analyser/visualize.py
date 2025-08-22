@@ -3,23 +3,51 @@ import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 import random
 
+from constants.service import CSV_TRACK_PATH, CSV_ARTIST_PATH, CSV_RELEASE_PATH, ORDER_TYPE
+
 # We load a font in order to be able to display Japanese characters
 jp_prop = fm.FontProperties(fname="./data/font/NotoSansJP-Regular.ttf")
 fm.fontManager.addfont("./data/font/NotoSansJP-Regular.ttf")
 plt.rcParams["font.family"] = "Noto Sans JP"
 
 
-# Top Streamed
-def top_artists(csv_artists_path: str = "./data/csv/artists_data.csv"):
-    a_df = pd.read_csv(csv_artists_path)
-    sorted_a_df = a_df.sort_values("Minutes_Streamed", ascending=False)
-    return sorted_a_df.head(10)
+# ----------------------------------------------- Track Stats ----------------------------------------------- 
 
-
-def top_tracks(csv_tracks_path: str = "./data/csv/tracks_data.csv"):
+# Return top n tracks sorted by minutes streamed or by stream count
+def top_tracks(n : int, order_type : ORDER_TYPE, csv_tracks_path: str = CSV_TRACK_PATH) -> pd.DataFrame:
     t_df = pd.read_csv(csv_tracks_path)
-    sorted_t_df = t_df.sort_values("Minutes_Streamed", ascending=False)
-    return sorted_t_df.head(10)
+    if order_type == ORDER_TYPE.MINUTES_STREAMED:
+        sorted_t_df = t_df.sort_values("Minutes_Streamed", ascending=False)
+    elif order_type == ORDER_TYPE.TRACK_DONE_COUNT:
+        sorted_t_df = t_df.sort_values("Track_Done_Count", ascending=False)
+    return sorted_t_df.head(n)
+
+# Return the average duration of all tracks the user listened 
+def average_duration(csv_tracks_path: str = CSV_TRACK_PATH) -> int:
+    t_df = pd.read_csv(csv_tracks_path)
+    avg_duration = t_df['Duration_Ms'].mean()
+    return (avg_duration/1000)
+
+# ----------------------------------------------- Artist Stats ----------------------------------------------- 
+
+# Return top n artists sorted by minutes streamed or by stream count
+def top_tracks(n : int, order_type : ORDER_TYPE, csv_artists_path: str = CSV_ARTIST_PATH) -> pd.DataFrame:
+    a_df = pd.read_csv(csv_artists_path)
+    if order_type == ORDER_TYPE.MINUTES_STREAMED:
+        sorted_a_df = a_df.sort_values("Minutes_Streamed", ascending=False)
+    elif order_type == ORDER_TYPE.TRACK_DONE_COUNT:
+        sorted_a_df = a_df.sort_values("Track_Done_Count", ascending=False)
+    return sorted_a_df.head(n)
+
+# Return the ratio of the number of track listened and the monthly listeners number of artists
+def playcount_artist_popularity_ratio(csv_artists_path : str = CSV_ARTIST_PATH):
+    a_df = pd.read_csv(csv_artists_path)
+    
+    filt = (a_df["Track_Done_Count"] > 50) & (a_df["Popularity"] > 0)
+    a_df = a_df.loc[filt]
+    a_df['Originality_Score'] = a_df['Track_Done_Count']/a_df['Popularity']
+   
+    return a_df[['Name', 'Popularity', 'Track_Done_Count', 'Originality_Score']].sort_values('Originality_Score', ascending=False)
 
 
 def top_releases(csv_releases_path: str = "./data/csv/releases_data.csv"):
@@ -52,12 +80,12 @@ def plot_bar_chart(df, title):
     return fig
 
 
-def scatter_calculate_scores(path: str):
+def scatter_calculate_scores(artists_csv_path : str = CSV_ARTIST_PATH):
     w_click = 1.0
     w_done = 0.5
     w_skip = 0.2
 
-    a_df = pd.read_csv(path)
+    a_df = pd.read_csv(artists_csv_path)
     filt = (a_df["Track_Done_Count"] > 50) & (a_df["Click_Row_Count"] > 0)
     df = a_df.loc[filt].copy()
 
@@ -84,8 +112,25 @@ def scatter_calculate_scores(path: str):
 
     df_selected = df[["Name", "Interest_Score", "Commitment_Ratio"]]
 
-    return (
-        fig,
-        df_selected.sort_values("Interest_Score", ascending=False).head(50),
-        df_selected.sort_values("Commitment_Ratio", ascending=False).head(50),
+    plt.show()
+
+    # return (
+    #     fig,
+    #     df_selected.sort_values("Interest_Score", ascending=False).head(50),
+    #     df_selected.sort_values("Commitment_Ratio", ascending=False).head(50),
+    # )
+    
+def scatter_playcount_duration(tracks_csv_path : str = CSV_TRACK_PATH):
+    t_df = pd.read_csv(tracks_csv_path)
+    
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.scatter(t_df["Track_Done_Count"], t_df["Duration_Ms"])
+    ax.set_xlabel("Tracks Playcount")
+    ax.set_ylabel("Tracks Duration in Ms")
+    ax.set_title("Playcount vs Duration")
+    ax.plot(
+        [t_df["Track_Done_Count"].min(), t_df["Track_Done_Count"].max()],
+        [t_df["Duration_Ms"].min(), t_df["Duration_Ms"].max()],
+        color="red",
     )
+    plt.show()

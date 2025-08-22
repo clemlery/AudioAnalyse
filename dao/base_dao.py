@@ -38,7 +38,7 @@ def logging_func_fetch_dao(fn: Callable) -> Callable:
     return wrapper
 
 
-def loggin_func_db_dao(fn: Callable) -> Callable:
+def logging_func_db_dao(fn: Callable) -> Callable:
     # To keep the function metadata
     @wraps(fn)
     def wrapper(*args, **kwargs):
@@ -55,8 +55,11 @@ def loggin_func_db_dao(fn: Callable) -> Callable:
 
     return wrapper
 
+def logging_func_scrap_dao(fn: Callable) -> Callable:
+    pass
 
-# We create the mother class of BaseDbDAO and BaseFetchDAO
+
+# We create the mother class of BaseDbDAO, BaseFetchDAO and BaseScrapDAO
 class BaseDAO:
     pass
 
@@ -72,7 +75,7 @@ class BaseDbDAO(BaseDAO):
                 and isinstance(value, staticmethod)
             ):
                 func = value.__func__
-                setattr(cls, attr, staticmethod(loggin_func_db_dao(func)))
+                setattr(cls, attr, staticmethod(logging_func_db_dao(func)))
 
 
 class BaseFetchDAO(BaseDAO):

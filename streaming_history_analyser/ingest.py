@@ -24,7 +24,7 @@ def load_streaming_history_folder():
     delete_log_backup()
     
     try:
-        filenames = os.listdir(UPLOADS_TEST_PATH)
+        filenames = os.listdir(UPLOADS_PATH)
     except Exception as e:
         raise e
 
@@ -46,7 +46,7 @@ def load_streaming_history_folder():
 
 
 def load_streaming_history_file(filename: str):
-    path = UPLOADS_TEST_PATH + filename
+    path = UPLOADS_PATH + filename
     try:
         with open(path, "r") as f:
             return json.load(f)

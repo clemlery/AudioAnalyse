@@ -13,6 +13,11 @@ class RELEASE_TYPE(enum.Enum):
     ALBUM = "album"
     COMPILATION = "compilation"
     
+# Enumeration describing ordering type for function that calcul tops
+class ORDER_TYPE(enum.Enum):
+    MINUTES_STREAMED : Final[str] = 'minutes_streamed'
+    TRACK_DONE_COUNT : Final[str] = 'track_done_count'
+    
 # This variable defines every how many new rows in the database we commit
 BATCH_SIZE : Final[int] = 200
 
@@ -25,3 +30,11 @@ UPLOADS_PATH : Final[str] = './data/uploads/'
 # Folder streaming history data path (test files)
 UPLOADS_TEST_PATH : Final[str] = './data/test/'
 
+# Path of the csv files containing all the most interesting data in the database
+CSV_TRACK_PATH : Final[str] = "./data/csv/tracks_data.csv"
+CSV_ARTIST_PATH : Final[str] = "./data/csv/artists_data.csv"
+CSV_RELEASE_PATH: Final[str] = "./data/csv/releases_data.csv"
+
+
+
+    
