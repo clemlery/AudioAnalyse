@@ -34,6 +34,7 @@ UPLOADS_TEST_PATH : Final[str] = './data/test/'
 CSV_TRACK_PATH : Final[str] = "./data/csv/tracks_data.csv"
 CSV_ARTIST_PATH : Final[str] = "./data/csv/artists_data.csv"
 CSV_RELEASE_PATH: Final[str] = "./data/csv/releases_data.csv"
+CSV_STREAM_DAY_PATH : Final[str] = "./data/csv/stream_day_data.csv"
 
 
 

@@ -1,9 +1,11 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
+import matplotlib.dates as mdates
 import random
 
-from constants.service import CSV_TRACK_PATH, CSV_ARTIST_PATH, CSV_RELEASE_PATH, ORDER_TYPE
+
+from constants.service import CSV_STREAM_DAY_PATH, CSV_TRACK_PATH, CSV_ARTIST_PATH, CSV_RELEASE_PATH, ORDER_TYPE
 
 # We load a font in order to be able to display Japanese characters
 jp_prop = fm.FontProperties(fname="./data/font/NotoSansJP-Regular.ttf")
@@ -134,3 +136,50 @@ def scatter_playcount_duration(tracks_csv_path : str = CSV_TRACK_PATH):
         color="red",
     )
     plt.show()
+    
+def stream_day_plot_per_track_done(stream_day_csv_path: str = CSV_STREAM_DAY_PATH):
+    s_d_df = pd.read_csv(stream_day_csv_path)
+    
+    # Conversion en datetime
+    s_d_df['Date'] = pd.to_datetime(s_d_df['Date'])
+    s_d_df.sort_values(by='Date', inplace=True)
+    
+    fig, ax = plt.subplots(figsize=(12, 6))
+    ax.plot(s_d_df['Date'], s_d_df['Track_Done_Count'])
+    
+    # Titres et labels
+    ax.set_title('Track done per day', fontproperties=jp_prop)
+    ax.set_xlabel("Date", fontproperties=jp_prop)
+    ax.set_ylabel("Number of track done", fontproperties=jp_prop)
+    
+    # Format des dates en abscisse
+    ax.xaxis.set_major_locator(mdates.MonthLocator())  # une graduation par mois
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))  # affichage AAAA-MM
+    
+    fig.autofmt_xdate()  # rotation automatique pour lisibilité
+    
+    plt.show()
+    
+def stream_day_plot_per_minutes_streamed(stream_day_csv_path : str = CSV_STREAM_DAY_PATH):
+    s_d_df = pd.read_csv(stream_day_csv_path)
+    
+    # Conversion en datetime
+    s_d_df['Date'] = pd.to_datetime(s_d_df['Date'])
+    s_d_df.sort_values(by='Date', inplace=True)
+    
+    fig, ax = plt.subplots(figsize=(12, 6))
+    ax.plot(s_d_df['Date'], s_d_df['Total_Duration_Play_m'])
+    
+    # Titres et labels
+    ax.set_title('Minutes streamed per day', fontproperties=jp_prop)
+    ax.set_xlabel("Date", fontproperties=jp_prop)
+    ax.set_ylabel("Number of minutes streamed", fontproperties=jp_prop)
+    
+    # Format des dates en abscisse
+    ax.xaxis.set_major_locator(mdates.MonthLocator())  # une graduation par mois
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))  # affichage AAAA-MM
+    
+    fig.autofmt_xdate()  # rotation automatique pour lisibilité
+    
+    plt.show()
+    
