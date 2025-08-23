@@ -5,10 +5,10 @@ from sqlalchemy import pool
 
 from alembic import context
 
-import sys 
-import os 
+import sys
+import os
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from models.sql_alchemy_models.base import Base
 from models.sql_alchemy_models.track_sql_model import Track
@@ -18,8 +18,10 @@ from models.sql_alchemy_models.artist_sql_model import Artist
 from models.sql_alchemy_models.track_stream_sql_model import TrackStream
 from models.sql_alchemy_models.track_stream_day_sql_model import TrackStreamDay
 from models.sql_alchemy_models.user_sql_model import User
-from models.sql_alchemy_models.metrics import TrackMetricsSnapshot, ArtistMetricsSnapshot
-
+from models.sql_alchemy_models.metrics import (
+    TrackMetricsSnapshot,
+    ArtistMetricsSnapshot,
+)
 
 
 # this is the Alembic Config object, which provides
@@ -81,9 +83,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

@@ -22,7 +22,7 @@ def delete_log_backup():
 
 def load_streaming_history_folder():
     delete_log_backup()
-    
+
     try:
         filenames = os.listdir(UPLOADS_PATH)
     except Exception as e:

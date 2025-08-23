@@ -55,6 +55,8 @@ def logging_func_db_dao(fn: Callable) -> Callable:
 
     return wrapper
 
+
+# TODO
 def logging_func_scrap_dao(fn: Callable) -> Callable:
     pass
 
@@ -108,8 +110,14 @@ class BaseFetchDAO(BaseDAO):
 
 
 class BaseScrapDAO(BaseDAO):
-    def __init__(self, access_token : str, client_token: str, user_agent : str, hash_value : str, cookies : dict):
-
+    def __init__(
+        self,
+        access_token: str,
+        client_token: str,
+        user_agent: str,
+        hash_value: str,
+        cookies: dict,
+    ):
         self.sess = requests.Session()
 
         self.sess.headers.update(
@@ -134,5 +142,5 @@ class BaseScrapDAO(BaseDAO):
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         for attr, value in cls.__dict__.items():
-            if callable(value) and not value.__name__.startswith('__'):
+            if callable(value) and not value.__name__.startswith("__"):
                 setattr(cls, attr, logging_func_fetch_dao(value))

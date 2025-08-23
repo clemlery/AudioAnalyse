@@ -6,20 +6,21 @@ from typing import Optional, List
 
 
 class ArtistDAO(BaseDbDAO):
-    @staticmethod  
-    def add_artist(artist_data : ArtistDataClasseModel) -> ArtistDbModel: 
+    @staticmethod
+    def add_artist(artist_data: ArtistDataClasseModel) -> ArtistDbModel:
         """
-        add or update an artist with its metadatas 
+        add or update an artist with its metadatas
         """
-        
-    
+
         artist = ArtistDbModel(
-            spotify_id = artist_data.id,
+            spotify_id=artist_data.id,
             name=artist_data.name,
             followers=artist_data.followers.total,
             popularity=artist_data.popularity,
             genres=artist_data.genres,
-            image=artist_data.images[0].url if artist_data.images else ["https://example.com/placeholder.png"],
+            image=artist_data.images[0].url
+            if artist_data.images
+            else ["https://example.com/placeholder.png"],
         )
 
         try:
@@ -29,7 +30,7 @@ class ArtistDAO(BaseDbDAO):
             session.rollback()
             raise
         return artist
-        
+
     @staticmethod
     def get_all_artist() -> List[ArtistDbModel]:
         return session.query(ArtistDbModel).all()
@@ -37,9 +38,9 @@ class ArtistDAO(BaseDbDAO):
     @staticmethod
     def get_artist_by_id(artist_id: str) -> Optional[ArtistDbModel]:
         return ArtistDbModel.query.get(artist_id)
-    
+
     @staticmethod
-    def get_artist_by_spotify_id(spotify_id : str) -> Optional[ArtistDbModel]:
+    def get_artist_by_spotify_id(spotify_id: str) -> Optional[ArtistDbModel]:
         return session.query(ArtistDbModel).filter_by(spotify_id=spotify_id).first()
 
     @staticmethod

@@ -15,7 +15,7 @@ class SpotifyArtistScraperDAO(BaseScrapDAO):
                 "persistedQuery": {"version": 1, "sha256Hash": self.hash_value}
             },
         }
-        
+
         resp = self.sess.post(SPOTIFY_INTERN_API, json=payload)
 
         try:

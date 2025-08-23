@@ -1,3 +1,5 @@
+# visualize.py
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
@@ -5,7 +7,13 @@ import matplotlib.dates as mdates
 import random
 
 
-from constants.service import CSV_STREAM_DAY_PATH, CSV_TRACK_PATH, CSV_ARTIST_PATH, CSV_RELEASE_PATH, ORDER_TYPE
+from constants.service import (
+    CSV_STREAM_DAY_PATH,
+    CSV_TRACK_PATH,
+    CSV_ARTIST_PATH,
+    CSV_RELEASE_PATH,
+    ORDER_TYPE,
+)
 
 # We load a font in order to be able to display Japanese characters
 jp_prop = fm.FontProperties(fname="./data/font/NotoSansJP-Regular.ttf")
@@ -13,10 +21,13 @@ fm.fontManager.addfont("./data/font/NotoSansJP-Regular.ttf")
 plt.rcParams["font.family"] = "Noto Sans JP"
 
 
-# ----------------------------------------------- Track Stats ----------------------------------------------- 
+# ----------------------------------------------- Track Stats -----------------------------------------------
 
-# Return top n tracks sorted by minutes streamed or by stream count
-def top_tracks(n : int, order_type : ORDER_TYPE, csv_tracks_path: str = CSV_TRACK_PATH) -> pd.DataFrame:
+
+# Return top n tracks sorted by minutes streamed or by stream count
+def top_tracks(
+    n: int, order_type: ORDER_TYPE, csv_tracks_path: str = CSV_TRACK_PATH
+) -> pd.DataFrame:
     t_df = pd.read_csv(csv_tracks_path)
     if order_type == ORDER_TYPE.MINUTES_STREAMED:
         sorted_t_df = t_df.sort_values("Minutes_Streamed", ascending=False)
@@ -24,16 +35,21 @@ def top_tracks(n : int, order_type : ORDER_TYPE, csv_tracks_path: str = CSV_TRAC
         sorted_t_df = t_df.sort_values("Track_Done_Count", ascending=False)
     return sorted_t_df.head(n)
 
-# Return the average duration of all tracks the user listened 
+
+# Return the average duration of all tracks the user listened
 def average_duration(csv_tracks_path: str = CSV_TRACK_PATH) -> int:
     t_df = pd.read_csv(csv_tracks_path)
-    avg_duration = t_df['Duration_Ms'].mean()
-    return (avg_duration/1000)
+    avg_duration = t_df["Duration_Ms"].mean()
+    return avg_duration / 1000
 
-# ----------------------------------------------- Artist Stats ----------------------------------------------- 
 
-# Return top n artists sorted by minutes streamed or by stream count
-def top_tracks(n : int, order_type : ORDER_TYPE, csv_artists_path: str = CSV_ARTIST_PATH) -> pd.DataFrame:
+# ----------------------------------------------- Artist Stats -----------------------------------------------
+
+
+# Return top n artists sorted by minutes streamed or by stream count
+def top_artists(
+    n: int, order_type: ORDER_TYPE, csv_artists_path: str = CSV_ARTIST_PATH
+) -> pd.DataFrame:
     a_df = pd.read_csv(csv_artists_path)
     if order_type == ORDER_TYPE.MINUTES_STREAMED:
         sorted_a_df = a_df.sort_values("Minutes_Streamed", ascending=False)
@@ -41,21 +57,33 @@ def top_tracks(n : int, order_type : ORDER_TYPE, csv_artists_path: str = CSV_ART
         sorted_a_df = a_df.sort_values("Track_Done_Count", ascending=False)
     return sorted_a_df.head(n)
 
-# Return the ratio of the number of track listened and the monthly listeners number of artists
-def playcount_artist_popularity_ratio(csv_artists_path : str = CSV_ARTIST_PATH):
+
+# Return the ratio of the number of track listened and the monthly listeners number of artists
+def playcount_artist_popularity_ratio(csv_artists_path: str = CSV_ARTIST_PATH):
     a_df = pd.read_csv(csv_artists_path)
-    
+
     filt = (a_df["Track_Done_Count"] > 50) & (a_df["Popularity"] > 0)
     a_df = a_df.loc[filt]
-    a_df['Originality_Score'] = a_df['Track_Done_Count']/a_df['Popularity']
-   
-    return a_df[['Name', 'Popularity', 'Track_Done_Count', 'Originality_Score']].sort_values('Originality_Score', ascending=False)
+    a_df["Originality_Score"] = a_df["Track_Done_Count"] / a_df["Popularity"]
+
+    return a_df[
+        ["Name", "Popularity", "Track_Done_Count", "Originality_Score"]
+    ].sort_values("Originality_Score", ascending=False)
 
 
-def top_releases(csv_releases_path: str = "./data/csv/releases_data.csv"):
+# ----------------------------------------------- Releases Stats -----------------------------------------------
+
+
+# Return top n albums/eps sorted by minutes streamed or by stream count
+def top_releases(
+    n: int, order_type: ORDER_TYPE, csv_releases_path: str = CSV_RELEASE_PATH
+) -> pd.DataFrame:
     r_df = pd.read_csv(csv_releases_path)
-    sorted_r_df = r_df.sort_values("Minutes_Streamed", ascending=False)
-    return sorted_r_df.head(10)
+    if order_type == ORDER_TYPE.MINUTES_STREAMED:
+        sorted_r_df = r_df.sort_values("Minutes_Streamed", ascending=False)
+    elif order_type == ORDER_TYPE.TRACK_DONE_COUNT:
+        sorted_r_df = r_df.sort_values("Track_Done_Count", ascending=False)
+    return sorted_r_df.head(n)
 
 
 def plot_bar_chart(df, title):
@@ -82,7 +110,7 @@ def plot_bar_chart(df, title):
     return fig
 
 
-def scatter_calculate_scores(artists_csv_path : str = CSV_ARTIST_PATH):
+def scatter_calculate_scores(artists_csv_path: str = CSV_ARTIST_PATH):
     w_click = 1.0
     w_done = 0.5
     w_skip = 0.2
@@ -121,10 +149,11 @@ def scatter_calculate_scores(artists_csv_path : str = CSV_ARTIST_PATH):
     #     df_selected.sort_values("Interest_Score", ascending=False).head(50),
     #     df_selected.sort_values("Commitment_Ratio", ascending=False).head(50),
     # )
-    
-def scatter_playcount_duration(tracks_csv_path : str = CSV_TRACK_PATH):
+
+
+def scatter_playcount_duration(tracks_csv_path: str = CSV_TRACK_PATH):
     t_df = pd.read_csv(tracks_csv_path)
-    
+
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.scatter(t_df["Track_Done_Count"], t_df["Duration_Ms"])
     ax.set_xlabel("Tracks Playcount")
@@ -136,50 +165,53 @@ def scatter_playcount_duration(tracks_csv_path : str = CSV_TRACK_PATH):
         color="red",
     )
     plt.show()
-    
+
+
 def stream_day_plot_per_track_done(stream_day_csv_path: str = CSV_STREAM_DAY_PATH):
     s_d_df = pd.read_csv(stream_day_csv_path)
-    
+
     # Conversion en datetime
-    s_d_df['Date'] = pd.to_datetime(s_d_df['Date'])
-    s_d_df.sort_values(by='Date', inplace=True)
-    
+    s_d_df["Date"] = pd.to_datetime(s_d_df["Date"])
+    s_d_df.sort_values(by="Date", inplace=True)
+
     fig, ax = plt.subplots(figsize=(12, 6))
-    ax.plot(s_d_df['Date'], s_d_df['Track_Done_Count'])
-    
+    ax.plot(s_d_df["Date"], s_d_df["Track_Done_Count"])
+
     # Titres et labels
-    ax.set_title('Track done per day', fontproperties=jp_prop)
+    ax.set_title("Track done per day", fontproperties=jp_prop)
     ax.set_xlabel("Date", fontproperties=jp_prop)
     ax.set_ylabel("Number of track done", fontproperties=jp_prop)
-    
+
     # Format des dates en abscisse
     ax.xaxis.set_major_locator(mdates.MonthLocator())  # une graduation par mois
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))  # affichage AAAA-MM
-    
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))  # affichage AAAA-MM
+
     fig.autofmt_xdate()  # rotation automatique pour lisibilité
-    
+
     plt.show()
-    
-def stream_day_plot_per_minutes_streamed(stream_day_csv_path : str = CSV_STREAM_DAY_PATH):
+
+
+def stream_day_plot_per_minutes_streamed(
+    stream_day_csv_path: str = CSV_STREAM_DAY_PATH,
+):
     s_d_df = pd.read_csv(stream_day_csv_path)
-    
+
     # Conversion en datetime
-    s_d_df['Date'] = pd.to_datetime(s_d_df['Date'])
-    s_d_df.sort_values(by='Date', inplace=True)
-    
+    s_d_df["Date"] = pd.to_datetime(s_d_df["Date"])
+    s_d_df.sort_values(by="Date", inplace=True)
+
     fig, ax = plt.subplots(figsize=(12, 6))
-    ax.plot(s_d_df['Date'], s_d_df['Total_Duration_Play_m'])
-    
+    ax.plot(s_d_df["Date"], s_d_df["Total_Duration_Play_m"])
+
     # Titres et labels
-    ax.set_title('Minutes streamed per day', fontproperties=jp_prop)
+    ax.set_title("Minutes streamed per day", fontproperties=jp_prop)
     ax.set_xlabel("Date", fontproperties=jp_prop)
     ax.set_ylabel("Number of minutes streamed", fontproperties=jp_prop)
-    
+
     # Format des dates en abscisse
     ax.xaxis.set_major_locator(mdates.MonthLocator())  # une graduation par mois
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))  # affichage AAAA-MM
-    
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))  # affichage AAAA-MM
+
     fig.autofmt_xdate()  # rotation automatique pour lisibilité
-    
+
     plt.show()
-    

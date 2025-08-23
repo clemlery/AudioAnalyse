@@ -1,4 +1,4 @@
-# graph.py
+# reporting.py
 
 # We import the DAOs
 from collections import defaultdict
@@ -8,7 +8,10 @@ from sqlalchemy import func, or_
 
 # We import the tables
 from models.sql_alchemy_models.artist_sql_model import Artist
-from models.sql_alchemy_models.metrics import ArtistMetricsSnapshot, TrackMetricsSnapshot
+from models.sql_alchemy_models.metrics import (
+    ArtistMetricsSnapshot,
+    TrackMetricsSnapshot,
+)
 from models.sql_alchemy_models.release_sql_model import Release
 from models.sql_alchemy_models.track_sql_model import Track
 from models.sql_alchemy_models.track_stream_day_sql_model import TrackStreamDay
@@ -50,13 +53,13 @@ def artists_data_to_csv(session, output_file="data/csv/artists_data.csv"):
         "Single_Number",
         "Album_Number",
         "EP_Number",
-        "Monthly_Listeners"
+        "Monthly_Listeners",
     ]
 
     # Initialize stats with defaults for each artist
     stats = defaultdict(
         lambda: {
-            "Artist_Id" : 0,
+            "Artist_Id": 0,
             "Name": None,
             "Genres": None,
             "Popularity": None,
@@ -86,7 +89,7 @@ def artists_data_to_csv(session, output_file="data/csv/artists_data.csv"):
             func.sum(TrackStream.skipped_count).label("skipped_count"),
             func.sum(TrackStream.track_done_count).label("track_done_count"),
             func.count(TrackStream.track_id).label("track_count"),
-            ArtistMetricsSnapshot.monthly_listeners.label("monthly_listeners")
+            ArtistMetricsSnapshot.monthly_listeners.label("monthly_listeners"),
         )
         .join(Artist.tracks)
         .join(Track.streams)
@@ -97,7 +100,7 @@ def artists_data_to_csv(session, output_file="data/csv/artists_data.csv"):
     for row in stream_q:
         stats[row.artist_id].update(
             {
-                "Artist_Id" : row.artist_id,
+                "Artist_Id": row.artist_id,
                 "Name": row.name,
                 "Genres": ",".join(row.genres)
                 if isinstance(row.genres, (list, tuple))
@@ -109,7 +112,7 @@ def artists_data_to_csv(session, output_file="data/csv/artists_data.csv"):
                 "Skipped_Count": row.skipped_count or 0,
                 "Track_Done_Count": row.track_done_count or 0,
                 "Track_Count": row.track_count or 0,
-                "Monthly_Listeners": row.monthly_listeners
+                "Monthly_Listeners": row.monthly_listeners,
             }
         )
 
@@ -163,23 +166,23 @@ def tracks_data_to_csv(session, output_file="data/csv/tracks_data.csv"):
         "Click_Row_Count",
         "Minutes_Streamed",
         "Global_Playcount",
-        "Artist_Id"
+        "Artist_Id",
     ]
 
     # Initialize stats with defaults for each track
     stats = defaultdict(
         lambda: {
-            "Track_Id" : 0,
+            "Track_Id": 0,
             "Name": None,
             "Duration_Ms": 0,
-            "First_Played_At": '',
-            "Last_Played_At": '',
+            "First_Played_At": "",
+            "Last_Played_At": "",
             "Minutes_Streamed": 0,
             "Click_Row_Count": 0,
             "Skipped_Count": 0,
             "Track_Done_Count": 0,
             "Global_Playcount": 0,
-            "Artist_Id": 0
+            "Artist_Id": 0,
         }
     )
 
@@ -196,18 +199,24 @@ def tracks_data_to_csv(session, output_file="data/csv/tracks_data.csv"):
             func.sum(TrackStream.skipped_count).label("skipped_count"),
             func.sum(TrackStream.track_done_count).label("track_done_count"),
             TrackMetricsSnapshot.playcount.label("track_global_playcount"),
-            Artist.id.label("artist_id")
+            Artist.id.label("artist_id"),
         )
         .join(Track.streams)
         .join(Track.track_metrics)
         .join(Track.artists)
-        .group_by(Track.id, TrackMetricsSnapshot.playcount, TrackStream.first_played_at, TrackStream.last_played_at, Artist.id)
+        .group_by(
+            Track.id,
+            TrackMetricsSnapshot.playcount,
+            TrackStream.first_played_at,
+            TrackStream.last_played_at,
+            Artist.id,
+        )
     )
 
     for row in stream_q:
         stats[row.track_id].update(
             {
-                "Track_Id" : row.track_id,
+                "Track_Id": row.track_id,
                 "Name": row.name,
                 "Duration_Ms": row.duration_ms,
                 "First_Played_At": row.first_play,
@@ -217,7 +226,7 @@ def tracks_data_to_csv(session, output_file="data/csv/tracks_data.csv"):
                 "Skipped_Count": row.skipped_count or 0,
                 "Track_Done_Count": row.track_done_count or 0,
                 "Global_Playcount": row.track_global_playcount or 0,
-                "Artist_Id": row.artist_id
+                "Artist_Id": row.artist_id,
             }
         )
 
@@ -309,51 +318,47 @@ def releases_data_to_csv(session, output_file="data/csv/releases_data.csv"):
 
     print(f"Exported data for {len(stats)} release to {output_file}")
 
+
 def track_stream_day_to_csv(session, output_file="data/csv/stream_day_data.csv"):
-    
     fieldnames = [
         "Date",
         "Track_Done_Count",
         "Skipped_Count",
         "Click_Row_Count",
-        "Total_Duration_Play_m"
+        "Total_Duration_Play_m",
     ]
-    
+
     stats = defaultdict(
-        lambda : {
-            "Date" : "",
+        lambda: {
+            "Date": "",
             "Track_Done_Count": 0,
             "Skipped_Count": 0,
             "Click_Row_Count": 0,
-            "Total_Duration_Play_m": 0
+            "Total_Duration_Play_m": 0,
         }
     )
-    
-    stream_q = (
-        session.query(
-            TrackStreamDay.date,
-            func.sum(TrackStreamDay.track_done_count).label("track_done_count"),
-            func.sum(TrackStreamDay.skipped_count).label("skipped_count"),
-            func.sum(TrackStreamDay.click_row_count).label("click_count"),
-            func.sum(TrackStreamDay.total_duration_play_s).label("secondes_streamed")
-        )
-        .group_by(TrackStreamDay.date)
-    )
-    
+
+    stream_q = session.query(
+        TrackStreamDay.date,
+        func.sum(TrackStreamDay.track_done_count).label("track_done_count"),
+        func.sum(TrackStreamDay.skipped_count).label("skipped_count"),
+        func.sum(TrackStreamDay.click_row_count).label("click_count"),
+        func.sum(TrackStreamDay.total_duration_play_s).label("secondes_streamed"),
+    ).group_by(TrackStreamDay.date)
+
     for row in stream_q:
         stats[row.date].update(
             {
-                "Date" : row.date or "",
-                "Track_Done_Count" : row.track_done_count or 0,
+                "Date": row.date or "",
+                "Track_Done_Count": row.track_done_count or 0,
                 "Skipped_Count": row.skipped_count or 0,
-                "Click_Row_Count" : row.click_count or 0,
-                "Total_Duration_Play_m": row.secondes_streamed//60 or 0
+                "Click_Row_Count": row.click_count or 0,
+                "Total_Duration_Play_m": row.secondes_streamed // 60 or 0,
             }
         )
-    
+
     with open(output_file, "w", newline="", encoding="utf-8") as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         for data in stats.values():
             writer.writerow(data)
-    

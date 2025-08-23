@@ -15,7 +15,7 @@ class SpotifyTrackScraperDAO(BaseScrapDAO):
                 "persistedQuery": {"version": 1, "sha256Hash": self.hash_value}
             },
         }
-        
+
         resp = self.sess.post(SPOTIFY_INTERN_API, json=payload)
 
         try:
@@ -23,5 +23,5 @@ class SpotifyTrackScraperDAO(BaseScrapDAO):
             data: dict[str, Any] = resp.json()
             ml = int(data["data"]["trackUnion"]["playcount"])
             return ml if isinstance(ml, int) else None
-        except (KeyError, TypeError,HTTPError):
+        except (KeyError, TypeError, HTTPError):
             return None

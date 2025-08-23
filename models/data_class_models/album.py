@@ -9,10 +9,10 @@ from models.data_class_models.simplified_album import SimplifiedAlbum
 
 
 class Album(SimplifiedAlbum):
-    restrictions : Optional[Restrictions] = None
-    tracks : Tracks
-    copyrights : Optional[List[Copyright]] = None
-    external_ids : ExternalIds
-    genres : Optional[List[str]] = []
-    label : constr(min_length=1)
-    popularity: conint(ge=0, le=100)    # 0 ≤ popularity ≤ 100
+    restrictions: Optional[Restrictions] = None
+    tracks: Tracks
+    copyrights: Optional[List[Copyright]] = None
+    external_ids: ExternalIds
+    genres: Optional[List[str]] = []
+    label: constr(min_length=1)
+    popularity: conint(ge=0, le=100)  # 0 ≤ popularity ≤ 100

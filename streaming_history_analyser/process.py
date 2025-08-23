@@ -50,7 +50,6 @@ current_loop_streak: int = 1
 current_loop_streak_day: int = 1
 
 
-
 def _filter_new_track_ids(records):
     """Return set of Spotify track IDs not in local DB."""
     ids = set()
@@ -75,10 +74,16 @@ def _fetch_all_tracks(token, ids, batch_size=50):
         tracks.extend(TrackFetchDAO.fetch_tracks(token, chunk))
     return tracks
 
+
 # ----------------------- Process functions -----------------------
 
+
 def _process_artists(
-    new_artists: set[str], seen_artists: set[str], artist_scraper : SpotifyArtistScraperDAO, token: str, batch_size=50
+    new_artists: set[str],
+    seen_artists: set[str],
+    artist_scraper: SpotifyArtistScraperDAO,
+    token: str,
+    batch_size=50,
 ):
     # Fetch missing artist data
     for chunk in chunk_list(list(new_artists), batch_size):
@@ -86,7 +91,9 @@ def _process_artists(
         for art in artists:
             artist_obj = ArtistDAO.add_artist(art)
             monthly_listeners = artist_scraper.get_artist_monthly_listeners(art.id)
-            ArtistMetricsSnapshotDAO.add_artist_metrics(artist_obj.id, monthly_listeners)
+            ArtistMetricsSnapshotDAO.add_artist_metrics(
+                artist_obj.id, monthly_listeners
+            )
             seen_artists.add(art.id)
 
 
@@ -109,16 +116,20 @@ def _process_releases(
         seen_releases.add(rel.id)
 
 
-def _process_tracks(tracks: list[Track], track_scraper : SpotifyTrackScraperDAO, seen_spotify_tracks: set[str]):
+def _process_tracks(
+    tracks: list[Track],
+    track_scraper: SpotifyTrackScraperDAO,
+    seen_spotify_tracks: set[str],
+):
     for t in tracks:
         seen_spotify_tracks.add(t.id)
         track_obj = TrackDAO.get_track_by_nd(
             t.name, t.duration_ms
         ) or TrackDAO.add_track(t)
-        
+
         playcount = track_scraper.get_track_playcount(t.id)
         TrackMetricsSnapshotDAO.add_track_metrics(track_obj.id, playcount)
-        
+
         if not SpotifyTrackDAO.get_spotify_track_by_spotify_id(t.id):
             SpotifyTrackDAO.add_spotify_track(
                 t.id, track_obj.id, ReleaseDAO.get_release_by_spotify_id(t.album.id).id
@@ -151,34 +162,8 @@ def _associate_rows(tracks):
                 rel_obj.artists.append(art_obj)
         session.flush()
 
-# ----------------------- Process main function -----------------------
 
-def _process_metadata(tracks, token, seen_artists, seen_releases, seen_spotify_tracks):
-    """Handle insertion of tracks, releases, artists and associations."""
-    # Identify new releases and artists
-    new_releases = {
-        t.album.id
-        for t in tracks
-        if t.album.id not in seen_releases
-        and not ReleaseDAO.get_release_by_spotify_id(t.album.id)
-    }
-    new_artists = {
-        a.id
-        for t in tracks
-        for a in t.artists
-        if a.id not in seen_artists and not ArtistDAO.get_artist_by_spotify_id(a.id)
-    }
-
-    _process_artists(new_artists, seen_artists, token)
-
-    _process_releases(new_releases, seen_releases, token)
-
-    _process_tracks(tracks, seen_spotify_tracks)
-
-    _associate_rows(tracks)
-
-
-def _parse_record(raw: Dict[str, Any]) -> dict|None:
+def _parse_record(raw: Dict[str, Any]) -> dict | None:
     """Normalize one raw record into a compact dict expected by downstream helpers."""
     ts = raw.get("ts")
     # Datetime parsing: accept ISO or "%Y-%m-%d %H:%M:%S" like strings
@@ -283,7 +268,8 @@ def _process_stream_batch(records, user_id):
 
     for raw in records:
         rec = _parse_record(raw)
-        if rec == None: continue
+        if rec == None:
+            continue
         # Resolve track
         track = _resolve_track_obj(rec["id"])
         if track is None:
@@ -304,7 +290,7 @@ def _process_stream_batch(records, user_id):
             "loop_streak_day": loop_streak_day,
             "date": rec["date"],
             "datetime": rec["datetime"],
-            "duration_ms": track.duration_ms
+            "duration_ms": track.duration_ms,
         }
 
         try:
@@ -315,14 +301,15 @@ def _process_stream_batch(records, user_id):
             # continue with others rather than aborting the batch
 
 
-def exploit_streaming_history(streaming_history: list[dict], scraper_factory: ScraperFactory | None = None):
-    
+def exploit_streaming_history(
+    streaming_history: list[dict], scraper_factory: ScraperFactory | None = None
+):
     if scraper_factory is None:
         scraper_factory = ScraperFactory(BrowserTokenSource())
-    
+
     artist_scraper = scraper_factory.artist()
     track_scraper = scraper_factory.track()
-    
+
     new_auth = ConfigAuth()
     user = UserDAO.get_all()[0]
 
@@ -361,7 +348,7 @@ def exploit_streaming_history(streaming_history: list[dict], scraper_factory: Sc
         _process_tracks(tracks, track_scraper, seen_spotify_tracks)
 
         _associate_rows(tracks)
-        
+
     _process_stream_batch(streaming_history, user_id)
     session.commit()
     session.expunge_all()

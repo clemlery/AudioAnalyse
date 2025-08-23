@@ -6,6 +6,7 @@ from models.data_class_models.paginated_response import PaginatedResponse
 from models.data_class_models.playlist_track import PlaylistTrack
 from models.data_class_models.saved_track import SavedTrack
 
+
 class Tracks(PaginatedResponse):
     # items peut contenir soit des PlaylistTrack, soit des SimplifiedTrack
     items: List[Union[PlaylistTrack, SimplifiedTrack, SavedTrack]]
@@ -15,7 +16,7 @@ class Tracks(PaginatedResponse):
     # configuration Pydantic v2
     model_config = ConfigDict()
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def check_limit_based_on_item_type(cls, result):
         """
         Après création du modèle :
@@ -26,19 +27,15 @@ class Tracks(PaginatedResponse):
             first_item = result.items[0]
             if isinstance(first_item, PlaylistTrack):
                 max_limit = 100
-                context = 'PlaylistTrack'
+                context = "PlaylistTrack"
             elif isinstance(first_item, SimplifiedTrack):
                 max_limit = 50
-                context = 'SimplifiedTrack'
+                context = "SimplifiedTrack"
             else:
                 max_limit = 50
-                context = 'SavedTrack'
+                context = "SavedTrack"
             if result.limit > max_limit:
                 raise ValueError(
-                    f'Pour {context}, limit doit être ≤ {max_limit}, got {result.limit}'
+                    f"Pour {context}, limit doit être ≤ {max_limit}, got {result.limit}"
                 )
         return result
-
-                
-    
-    

@@ -21,7 +21,13 @@ from datetime import datetime, timedelta, timezone
 from typing import Protocol, Optional
 
 from config import logger
-from constants.scraping import ARTIST_URI, ARTIST_URL, SPOTIFY_BASE_URL, TRACK_URI, TRACK_URL
+from constants.scraping import (
+    ARTIST_URI,
+    ARTIST_URL,
+    SPOTIFY_BASE_URL,
+    TRACK_URI,
+    TRACK_URL,
+)
 from dao.service import BrowserManager, get_tokens
 from dao.scrap_dao.spotify_artist_scraper_dao import SpotifyArtistScraperDAO
 from dao.scrap_dao.spotify_track_scraper_dao import SpotifyTrackScraperDAO
@@ -30,6 +36,7 @@ from dao.scrap_dao.spotify_track_scraper_dao import SpotifyTrackScraperDAO
 # =============================
 # Data required by the DAOs
 # =============================
+
 
 @dataclass
 class ScraperContext:
@@ -42,13 +49,13 @@ class ScraperContext:
     user_agent: str
     # Optional: expiration date (if you want to invalidate the cache after some delay)
     expires_at: Optional[datetime] = None
-    
+
     def __str__(self):
         def shorten(value: str, length: int = 9) -> str:
             if not value:
                 return "None"
             return value[:length] + "..." if len(value) > length else value
-        
+
         return (
             f"ScraperContext(\n"
             f"  access_token={self.access_token},\n"
@@ -56,7 +63,7 @@ class ScraperContext:
             f"  artist_hash={self.artist_hash},\n"
             f"  track_client_token={self.track_client_token},\n"
             f"  track_hash={self.track_hash},\n"
-            f"  cookies={' , '.join([f'{key}:{value}' for d in self.cookies for key,value in d.items()])},\n"
+            f"  cookies={' , '.join([f'{key}:{value}' for d in self.cookies for key, value in d.items()])},\n"
             f"  user_agent='{self.user_agent}',\n"
             f"  expires_at={self.expires_at}\n"
             f")"
@@ -67,16 +74,17 @@ class ScraperContext:
 # Token source abstraction
 # =============================
 
+
 class TokenSource(Protocol):
     """Minimal contract to obtain a ScraperContext."""
 
-    def get_context(self) -> ScraperContext:
-        ...
+    def get_context(self) -> ScraperContext: ...
 
 
 # ======================================================
 # Real implementation: via Browser (CDP logs + cookies)
 # ======================================================
+
 
 class BrowserTokenSource:
     """
@@ -91,8 +99,10 @@ class BrowserTokenSource:
         self._ttl = ttl
 
     # “Sentinel” IDs to trigger relevant endpoints (keep public, stable IDs)
-    _SAMPLE_TRACK_ID = "7BKLCZ1jbUBVqRi2FVlTVw" # "Closer" from Chainsmokers feat. Halsey
-    _SAMPLE_ARTIST_ID = "6qqNVTkY8uBg9cP3Jd7DAH" # Billie Eilish
+    _SAMPLE_TRACK_ID = (
+        "7BKLCZ1jbUBVqRi2FVlTVw"  # "Closer" from Chainsmokers feat. Halsey
+    )
+    _SAMPLE_ARTIST_ID = "6qqNVTkY8uBg9cP3Jd7DAH"  # Billie Eilish
 
     def _fresh_context(self) -> ScraperContext:
         bm = BrowserManager()
@@ -107,8 +117,12 @@ class BrowserTokenSource:
 
             logs = bm.get_cdp_log()
             # Extract tokens/hashes for track and artist
-            track_client_token, access_token, track_hash_value = get_tokens(TRACK_URI, logs)
-            artist_client_token, access_token, artist_hash_value = get_tokens(ARTIST_URI, logs)
+            track_client_token, access_token, track_hash_value = get_tokens(
+                TRACK_URI, logs
+            )
+            artist_client_token, access_token, artist_hash_value = get_tokens(
+                ARTIST_URI, logs
+            )
 
             cookies = bm.get_cookies()
             user_agent = bm.get_user_agent()
@@ -159,6 +173,7 @@ class BrowserTokenSource:
 # =============================
 # Scraping DAO factory
 # =============================
+
 
 class ScraperFactory:
     """

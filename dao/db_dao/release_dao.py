@@ -4,14 +4,14 @@ from models.sql_alchemy_models.release_sql_model import Release
 from models.data_class_models.album import Album
 from typing import List, Optional
 
+
 class ReleaseDAO(BaseDbDAO):
     @staticmethod
-    def add_release(release_data : Album, release_type : str) -> Release:
+    def add_release(release_data: Album, release_type: str) -> Release:
         """
         Ajoute ou met à jour une release avec ses métadonnées.
         """
-        
-        
+
         release = Release(
             spotify_id=release_data.id,
             release_type=release_type,
@@ -22,7 +22,6 @@ class ReleaseDAO(BaseDbDAO):
             total_tracks=release_data.total_tracks,
         )
 
-
         try:
             session.add(release)
             session.flush()
@@ -30,12 +29,10 @@ class ReleaseDAO(BaseDbDAO):
             session.rollback()
             raise
         return release
-        
-        
+
     @staticmethod
     def get_all_release() -> List[Release]:
         return session.query(Release.id).all()
-
 
     @staticmethod
     def get_release_by_spotify_id(spotify_id: str) -> Optional[Release]:

@@ -34,11 +34,11 @@ class BrowserManager:
         options.add_argument("--ignore-certificate-errors")
         self.wd = webdriver.Chrome()
         self.delay = WEBDRIVER_DELAY
-    
+
     def quit_driver(self):
         self.wd.quit()
 
-    def open_page(self, url : str) -> None:
+    def open_page(self, url: str) -> None:
         # We load the page at the url 'url'
         self.wd.get(url)
         time.sleep(self.delay)
@@ -48,16 +48,14 @@ class BrowserManager:
         # we click it
         self.wd.find_element(By.ID, COOKIE_BUTTON_ID).click()
         time.sleep(self.delay)
-        
 
     def get_cdp_log(self) -> dict:
         return self.wd.get_log("performance")
-    
+
     # We define the function which retrieve the useragent
     def get_user_agent(self) -> str:
         useragent = self.wd.execute_script("return navigator.userAgent")
         return useragent
-
 
     # We define the function which retrieve the cookies
     def get_cookies(self) -> dict:
@@ -65,7 +63,7 @@ class BrowserManager:
         return cookies
 
 
-def get_tokens(searched_uri : str, logs: dict) -> None|Tuple[str]:
+def get_tokens(searched_uri: str, logs: dict) -> None | Tuple[str]:
     for log in logs:
         msg = json.loads(log["message"]).get("message", {})
         if msg.get("method") == "Network.requestWillBeSent":
@@ -100,6 +98,3 @@ def get_tokens(searched_uri : str, logs: dict) -> None|Tuple[str]:
             if client_token and access_token and hash_value:
                 return client_token, access_token, hash_value
     return None
-
-
-
