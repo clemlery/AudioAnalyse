@@ -1,34 +1,19 @@
 # reporting.py
 
-# We import the DAOs
-from collections import defaultdict
 import csv
+import os
+from collections import defaultdict
 from sqlalchemy import func, or_
 
-
-# We import the tables
+from config import session
+from constants.service import RELEASE_TYPE, CSV_BASE_DIR
 from models.sql_alchemy_models.artist_sql_model import Artist
-from models.sql_alchemy_models.metrics import (
-    ArtistMetricsSnapshot,
-    TrackMetricsSnapshot,
-)
+from models.sql_alchemy_models.metrics import ArtistMetricsSnapshot, TrackMetricsSnapshot
 from models.sql_alchemy_models.release_sql_model import Release
+from models.sql_alchemy_models.spotify_track_sql_model import SpotifyTrack
 from models.sql_alchemy_models.track_sql_model import Track
 from models.sql_alchemy_models.track_stream_day_sql_model import TrackStreamDay
 from models.sql_alchemy_models.track_stream_sql_model import TrackStream
-from models.sql_alchemy_models.spotify_track_sql_model import SpotifyTrack
-
-from config import session
-
-
-import os
-
-from constants.service import RELEASE_TYPE, CSV_BASE_DIR
-
-
-from collections import defaultdict
-from sqlalchemy import func
-import csv
 
 
 def artists_data_to_csv(session, user_id: str, output_file: str | None = None):
@@ -122,7 +107,8 @@ def artists_data_to_csv(session, user_id: str, output_file: str | None = None):
             }
         )
 
-    # Aggregate release counts per artist (all artists)
+    # Aggregate release counts — scoped to artists this user has actually streamed
+    streamed_artist_ids = set(stats.keys())
     release_q = (
         session.query(
             Artist.id.label("artist_id"),
@@ -130,6 +116,7 @@ def artists_data_to_csv(session, user_id: str, output_file: str | None = None):
             func.count(Release.id).label("count"),
         )
         .join(Release.artists)
+        .filter(Artist.id.in_(streamed_artist_ids))
         .group_by(Artist.id, Release.release_type)
     )
 
