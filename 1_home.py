@@ -5,12 +5,24 @@ import streamlit as st
 from pages import *
 
 st.set_page_config(
-    page_title="Spotify Streaming Analytics – Home",
+    page_title="Lyra — Spotify Analytics",
     page_icon="🎧",
     layout="wide",
 )
 
-st.title("🎧 Spotify Streaming Analytics — Home")
+st.title("🎧 Lyra — Spotify Listening Analytics")
+
+# Session indicator
+user_id = st.session_state.get("user_id")
+if user_id:
+    display_name = st.session_state.get("display_name", user_id)
+    st.caption(f"Connected as **{display_name}**")
+else:
+    st.warning(
+        "You are not connected. Go to **Import Data** to authenticate with Spotify.",
+        icon="🔒",
+    )
+
 st.markdown(
     """
 Welcome! Follow the steps below to import your data and explore your Spotify statistics.

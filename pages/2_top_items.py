@@ -7,15 +7,21 @@ from streaming_history_analyser.visualize import (
     top_releases,
     top_tracks,
 )
-from constants.service import (
-    ORDER_TYPE,
-    CSV_ARTIST_PATH,
-    CSV_RELEASE_PATH,
-    CSV_TRACK_PATH,
-)
+from constants.service import ORDER_TYPE, user_csv_paths
 
 st.set_page_config(page_title="Top Items", page_icon="🏆", layout="wide")
 st.title("🏆 Top Items")
+
+user_id: str | None = st.session_state.get("user_id")
+if not user_id:
+    st.warning("You are not connected. Please authenticate on the Import page first.")
+    st.page_link("pages/4_import_data.py", label="Go to Import", icon="🗂️")
+    st.stop()
+
+csv_paths = user_csv_paths(user_id)
+CSV_TRACK_PATH = csv_paths["tracks"]
+CSV_ARTIST_PATH = csv_paths["artists"]
+CSV_RELEASE_PATH = csv_paths["releases"]
 
 with st.sidebar:
     st.header("Controls")

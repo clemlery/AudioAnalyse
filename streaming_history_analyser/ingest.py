@@ -20,7 +20,7 @@ def delete_log_backup():
             os.remove(filepath)
 
 
-def load_streaming_history_folder():
+def load_streaming_history_folder(user_id: str):
     delete_log_backup()
 
     try:
@@ -41,7 +41,7 @@ def load_streaming_history_folder():
 
     for filename in filenames:
         streaming_history = load_streaming_history_file(filename)
-        exploit_streaming_history(streaming_history)
+        exploit_streaming_history(streaming_history, user_id)
         logger.info(f"ALGORITHM DONE FOR FILENAME {filename}")
 
 

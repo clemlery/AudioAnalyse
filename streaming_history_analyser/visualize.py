@@ -7,13 +7,7 @@ import matplotlib.dates as mdates
 import random
 
 
-from constants.service import (
-    CSV_STREAM_DAY_PATH,
-    CSV_TRACK_PATH,
-    CSV_ARTIST_PATH,
-    CSV_RELEASE_PATH,
-    ORDER_TYPE,
-)
+from constants.service import ORDER_TYPE
 
 # We load a font in order to be able to display Japanese characters
 jp_prop = fm.FontProperties(fname="./data/font/NotoSansJP-Regular.ttf")
@@ -25,9 +19,7 @@ plt.rcParams["font.family"] = "Noto Sans JP"
 
 
 # Return top n tracks sorted by minutes streamed or by stream count
-def top_tracks(
-    n: int, order_type: ORDER_TYPE, csv_tracks_path: str = CSV_TRACK_PATH
-) -> pd.DataFrame:
+def top_tracks(n: int, order_type: ORDER_TYPE, csv_tracks_path: str) -> pd.DataFrame:
     t_df = pd.read_csv(csv_tracks_path)
     if order_type == ORDER_TYPE.MINUTES_STREAMED:
         sorted_t_df = t_df.sort_values("Minutes_Streamed", ascending=False)
@@ -37,7 +29,7 @@ def top_tracks(
 
 
 # Return the average duration of all tracks the user listened
-def average_duration(csv_tracks_path: str = CSV_TRACK_PATH) -> int:
+def average_duration(csv_tracks_path: str) -> int:
     t_df = pd.read_csv(csv_tracks_path)
     avg_duration = t_df["Duration_Ms"].mean()
     return avg_duration / 1000
@@ -47,9 +39,7 @@ def average_duration(csv_tracks_path: str = CSV_TRACK_PATH) -> int:
 
 
 # Return top n artists sorted by minutes streamed or by stream count
-def top_artists(
-    n: int, order_type: ORDER_TYPE, csv_artists_path: str = CSV_ARTIST_PATH
-) -> pd.DataFrame:
+def top_artists(n: int, order_type: ORDER_TYPE, csv_artists_path: str) -> pd.DataFrame:
     a_df = pd.read_csv(csv_artists_path)
     if order_type == ORDER_TYPE.MINUTES_STREAMED:
         sorted_a_df = a_df.sort_values("Minutes_Streamed", ascending=False)
@@ -59,7 +49,7 @@ def top_artists(
 
 
 # Return the ratio of the number of track listened and the monthly listeners number of artists
-def playcount_artist_popularity_ratio(csv_artists_path: str = CSV_ARTIST_PATH):
+def playcount_artist_popularity_ratio(csv_artists_path: str):
     a_df = pd.read_csv(csv_artists_path)
 
     filt = (a_df["Track_Done_Count"] > 50) & (a_df["Popularity"] > 0)
@@ -75,9 +65,7 @@ def playcount_artist_popularity_ratio(csv_artists_path: str = CSV_ARTIST_PATH):
 
 
 # Return top n albums/eps sorted by minutes streamed or by stream count
-def top_releases(
-    n: int, order_type: ORDER_TYPE, csv_releases_path: str = CSV_RELEASE_PATH
-) -> pd.DataFrame:
+def top_releases(n: int, order_type: ORDER_TYPE, csv_releases_path: str) -> pd.DataFrame:
     r_df = pd.read_csv(csv_releases_path)
     if order_type == ORDER_TYPE.MINUTES_STREAMED:
         sorted_r_df = r_df.sort_values("Minutes_Streamed", ascending=False)
@@ -110,7 +98,7 @@ def plot_bar_chart(df, title):
     return fig
 
 
-def scatter_calculate_scores(artists_csv_path: str = CSV_ARTIST_PATH):
+def scatter_calculate_scores(artists_csv_path: str):
     w_click = 1.0
     w_done = 0.5
     w_skip = 0.2
@@ -151,7 +139,7 @@ def scatter_calculate_scores(artists_csv_path: str = CSV_ARTIST_PATH):
     # )
 
 
-def scatter_playcount_duration(tracks_csv_path: str = CSV_TRACK_PATH):
+def scatter_playcount_duration(tracks_csv_path: str):
     t_df = pd.read_csv(tracks_csv_path)
 
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -167,7 +155,7 @@ def scatter_playcount_duration(tracks_csv_path: str = CSV_TRACK_PATH):
     plt.show()
 
 
-def stream_day_plot_per_track_done(stream_day_csv_path: str = CSV_STREAM_DAY_PATH):
+def stream_day_plot_per_track_done(stream_day_csv_path: str):
     s_d_df = pd.read_csv(stream_day_csv_path)
 
     # Conversion en datetime
@@ -191,9 +179,7 @@ def stream_day_plot_per_track_done(stream_day_csv_path: str = CSV_STREAM_DAY_PAT
     plt.show()
 
 
-def stream_day_plot_per_minutes_streamed(
-    stream_day_csv_path: str = CSV_STREAM_DAY_PATH,
-):
+def stream_day_plot_per_minutes_streamed(stream_day_csv_path: str):
     s_d_df = pd.read_csv(stream_day_csv_path)
 
     # Conversion en datetime

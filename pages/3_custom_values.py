@@ -3,8 +3,17 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
-from streaming_history_analyser.visualize import scatter_calculate_scores
-from constants.service import CSV_TRACK_PATH, CSV_ARTIST_PATH
+from constants.service import user_csv_paths
+
+user_id: str | None = st.session_state.get("user_id")
+if not user_id:
+    st.warning("You are not connected. Please authenticate on the Import page first.")
+    st.page_link("pages/4_import_data.py", label="Go to Import", icon="🗂️")
+    st.stop()
+
+csv_paths = user_csv_paths(user_id)
+CSV_TRACK_PATH = csv_paths["tracks"]
+CSV_ARTIST_PATH = csv_paths["artists"]
 
 # ---------------------------
 # Sidebar: global controls

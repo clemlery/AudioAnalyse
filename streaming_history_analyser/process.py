@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, Optional, Tuple
 from auth import ConfigAuth
-from constants.service import RELEASE_TYPE, UPLOADS_PATH
+from constants.service import RELEASE_TYPE
 
 # We import all the Fetch DAOs
 from dao.db_dao.track_stream_day_dao import TrackStreamDayDAO
@@ -302,7 +302,9 @@ def _process_stream_batch(records, user_id):
 
 
 def exploit_streaming_history(
-    streaming_history: list[dict], scraper_factory: ScraperFactory | None = None
+    streaming_history: list[dict],
+    user_id: str,
+    scraper_factory: ScraperFactory | None = None,
 ):
     if scraper_factory is None:
         scraper_factory = ScraperFactory(BrowserTokenSource())
@@ -311,9 +313,6 @@ def exploit_streaming_history(
     track_scraper = scraper_factory.track()
 
     new_auth = ConfigAuth()
-    user = UserDAO.get_all()[0]
-
-    user_id = user.id
     token = new_auth.access_token
 
     if not streaming_history:

@@ -21,8 +21,9 @@ from models.sql_alchemy_models.spotify_track_sql_model import SpotifyTrack
 from config import session
 
 
-# We import the user ID of the only user we have in the database
-from constants.service import USER_ID, RELEASE_TYPE
+import os
+
+from constants.service import RELEASE_TYPE, CSV_BASE_DIR
 
 
 from collections import defaultdict
@@ -30,14 +31,18 @@ from sqlalchemy import func
 import csv
 
 
-def artists_data_to_csv(session, output_file="data/csv/artists_data.csv"):
+def artists_data_to_csv(session, user_id: str, output_file: str | None = None):
     """
-    Export aggregated stream and release statistics for all artists to a CSV file.
+    Export aggregated stream and release statistics for a given user to a CSV file.
 
     Args:
         session: SQLAlchemy session object
-        output_file: Path to the output CSV file
+        user_id: Spotify user ID to filter stream data
+        output_file: Path to the output CSV file (defaults to data/csv/{user_id}/artists_data.csv)
     """
+    if output_file is None:
+        output_file = f"{CSV_BASE_DIR}/{user_id}/artists_data.csv"
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
     # Define the output columns
     fieldnames = [
         "Artist_Id",
@@ -76,7 +81,7 @@ def artists_data_to_csv(session, output_file="data/csv/artists_data.csv"):
         }
     )
 
-    # Aggregate stream data per artist (all artists)
+    # Aggregate stream data per artist, filtered to this user
     stream_q = (
         session.query(
             Artist.id.label("artist_id"),
@@ -94,6 +99,7 @@ def artists_data_to_csv(session, output_file="data/csv/artists_data.csv"):
         .join(Artist.tracks)
         .join(Track.streams)
         .join(Artist.artist_metrics)
+        .filter(TrackStream.user_id == user_id)
         .group_by(Artist.id, ArtistMetricsSnapshot.monthly_listeners)
     )
 
@@ -146,14 +152,18 @@ def artists_data_to_csv(session, output_file="data/csv/artists_data.csv"):
     print(f"Exported data for {len(stats)} artists to {output_file}")
 
 
-def tracks_data_to_csv(session, output_file="data/csv/tracks_data.csv"):
+def tracks_data_to_csv(session, user_id: str, output_file: str | None = None):
     """
-    Export aggregated stream statistics for all tracks to a CSV file.
+    Export aggregated stream statistics for a given user to a CSV file.
 
     Args:
         session: SQLAlchemy session object
-        output_file: Path to the output CSV file
+        user_id: Spotify user ID to filter stream data
+        output_file: Path to the output CSV file (defaults to data/csv/{user_id}/tracks_data.csv)
     """
+    if output_file is None:
+        output_file = f"{CSV_BASE_DIR}/{user_id}/tracks_data.csv"
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
     # Define the output columns
     fieldnames = [
         "Track_Id",
@@ -186,7 +196,7 @@ def tracks_data_to_csv(session, output_file="data/csv/tracks_data.csv"):
         }
     )
 
-    # Aggregate stream data per track (all tracks)
+    # Aggregate stream data per track, filtered to this user
     stream_q = (
         session.query(
             Track.id.label("track_id"),
@@ -204,6 +214,7 @@ def tracks_data_to_csv(session, output_file="data/csv/tracks_data.csv"):
         .join(Track.streams)
         .join(Track.track_metrics)
         .join(Track.artists)
+        .filter(TrackStream.user_id == user_id)
         .group_by(
             Track.id,
             TrackMetricsSnapshot.playcount,
@@ -240,7 +251,11 @@ def tracks_data_to_csv(session, output_file="data/csv/tracks_data.csv"):
     print(f"Exported data for {len(stats)} track to {output_file}")
 
 
-def releases_data_to_csv(session, output_file="data/csv/releases_data.csv"):
+def releases_data_to_csv(session, user_id: str, output_file: str | None = None):
+    if output_file is None:
+        output_file = f"{CSV_BASE_DIR}/{user_id}/releases_data.csv"
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+
     # Define the output columns
     fieldnames = [
         "Name",
@@ -290,6 +305,7 @@ def releases_data_to_csv(session, output_file="data/csv/releases_data.csv"):
         .join(SpotifyTrack.canonical)
         .join(Track.streams)
         .filter(or_(Release.release_type == "album", Release.release_type == "ep"))
+        .filter(TrackStream.user_id == user_id)
         .group_by(Release.id)
     )
 
@@ -319,7 +335,11 @@ def releases_data_to_csv(session, output_file="data/csv/releases_data.csv"):
     print(f"Exported data for {len(stats)} release to {output_file}")
 
 
-def track_stream_day_to_csv(session, output_file="data/csv/stream_day_data.csv"):
+def track_stream_day_to_csv(session, user_id: str, output_file: str | None = None):
+    if output_file is None:
+        output_file = f"{CSV_BASE_DIR}/{user_id}/stream_day_data.csv"
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+
     fieldnames = [
         "Date",
         "Track_Done_Count",
@@ -338,13 +358,17 @@ def track_stream_day_to_csv(session, output_file="data/csv/stream_day_data.csv")
         }
     )
 
-    stream_q = session.query(
-        TrackStreamDay.date,
-        func.sum(TrackStreamDay.track_done_count).label("track_done_count"),
-        func.sum(TrackStreamDay.skipped_count).label("skipped_count"),
-        func.sum(TrackStreamDay.click_row_count).label("click_count"),
-        func.sum(TrackStreamDay.total_duration_play_s).label("secondes_streamed"),
-    ).group_by(TrackStreamDay.date)
+    stream_q = (
+        session.query(
+            TrackStreamDay.date,
+            func.sum(TrackStreamDay.track_done_count).label("track_done_count"),
+            func.sum(TrackStreamDay.skipped_count).label("skipped_count"),
+            func.sum(TrackStreamDay.click_row_count).label("click_count"),
+            func.sum(TrackStreamDay.total_duration_play_s).label("secondes_streamed"),
+        )
+        .filter(TrackStreamDay.user_id == user_id)
+        .group_by(TrackStreamDay.date)
+    )
 
     for row in stream_q:
         stats[row.date].update(
