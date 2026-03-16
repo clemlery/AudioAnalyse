@@ -8,7 +8,7 @@ from config import logger
 import os
 import glob
 
-from streaming_history_analyser.process import exploit_streaming_history
+from streaming_history_analyser.process import exploit_streaming_history, IngestContext
 
 
 def delete_log_backup():
@@ -39,9 +39,12 @@ def load_streaming_history_folder(user_id: str):
     pattern = re.compile(r"(\d{1,2})(?=\.json$)")
     filenames = sorted(filenames, key=lambda fn: int(pattern.search(fn).group(1)))
 
+    # One context per user — streaks persist across files from the same export
+    ctx = IngestContext(user_id=user_id)
+
     for filename in filenames:
         streaming_history = load_streaming_history_file(filename)
-        exploit_streaming_history(streaming_history, user_id)
+        exploit_streaming_history(streaming_history, ctx)
         logger.info(f"ALGORITHM DONE FOR FILENAME {filename}")
 
 

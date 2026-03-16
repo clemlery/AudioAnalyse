@@ -1,5 +1,6 @@
 # process.py
 
+from dataclasses import dataclass, field
 from typing import Any, Dict, Optional, Tuple
 from auth import ConfigAuth
 from constants.service import RELEASE_TYPE
@@ -43,11 +44,20 @@ from streaming_history_analyser.service import (
 )
 from datetime import date, datetime
 
-# defining some variable for TrackStream and TrackStreamDay table's metadatas
-last_track_played: str = ""
-last_date = datetime(1, 1, 1).date()
-current_loop_streak: int = 1
-current_loop_streak_day: int = 1
+
+@dataclass
+class IngestContext:
+    """Holds per-user mutable state across streaming history file batches.
+
+    A single instance must be created per user before iterating over files,
+    so that loop streaks are preserved across file boundaries.
+    """
+
+    user_id: str
+    last_track_played: str = ""
+    last_date: date = field(default_factory=lambda: datetime(1, 1, 1).date())
+    loop_streak: int = 1
+    loop_streak_day: int = 1
 
 
 def _filter_new_track_ids(records):
@@ -207,28 +217,27 @@ def _resolve_track_obj(track_id: str):
 
 
 def _update_loop_streaks(
-    track_id: Optional[str], day: Optional[date]
+    ctx: IngestContext, track_id: Optional[str], day: Optional[date]
 ) -> Tuple[int, int]:
     """
-    Update global loop streaks according to last track and last date.
-    Returns (current_loop_streak, current_loop_streak_day).
+    Update loop streaks on ctx according to the current record.
+    Returns (loop_streak, loop_streak_day).
     """
-    global last_track_played, last_date, current_loop_streak, current_loop_streak_day
     # Streak per track
-    if track_id and track_id == last_track_played:
-        current_loop_streak += 1
+    if track_id and track_id == ctx.last_track_played:
+        ctx.loop_streak += 1
     else:
-        current_loop_streak = 1
-        last_track_played = track_id or ""
+        ctx.loop_streak = 1
+        ctx.last_track_played = track_id or ""
 
     # Streak per day
-    if day and day == last_date:
-        current_loop_streak_day += 1
+    if day and day == ctx.last_date:
+        ctx.loop_streak_day += 1
     else:
-        current_loop_streak_day = 1
-        last_date = day or last_date
+        ctx.loop_streak_day = 1
+        ctx.last_date = day or ctx.last_date
 
-    return current_loop_streak, current_loop_streak_day
+    return ctx.loop_streak, ctx.loop_streak_day
 
 
 def _persist_stream(track_id: int, user_id: int, meta: dict) -> None:
@@ -262,26 +271,22 @@ def _persist_stream_day(track_id: int, user_id: int, meta: dict) -> None:
 # ----------------------- Refactored main function -----------------------
 
 
-def _process_stream_batch(records, user_id):
-    """Insert or update stream records from a history batch (refactored)."""
-    global last_track_played, last_date, current_loop_streak, current_loop_streak_day
-
+def _process_stream_batch(records, ctx: IngestContext):
+    """Insert or update stream records from a history batch."""
     for raw in records:
         rec = _parse_record(raw)
-        if rec == None:
+        if rec is None:
             continue
-        # Resolve track
+
         track = _resolve_track_obj(rec["id"])
         if track is None:
             logger.warning(
                 f"Unknown Spotify track in DB for ID={rec['id']!r}, name={rec['name']!r}"
             )
-            continue  # skip cleanly—metadata insertion happens elsewhere
+            continue
 
-        # Update streaks
-        loop_streak, loop_streak_day = _update_loop_streaks(rec["id"], rec["date"])
+        loop_streak, loop_streak_day = _update_loop_streaks(ctx, rec["id"], rec["date"])
 
-        # Build metadata snapshot
         meta = {
             "done": rec["done"],
             "skip": rec["skip"],
@@ -294,8 +299,8 @@ def _process_stream_batch(records, user_id):
         }
 
         try:
-            _persist_stream(track.id, user_id, meta)
-            _persist_stream_day(track.id, user_id, meta)
+            _persist_stream(track.id, ctx.user_id, meta)
+            _persist_stream_day(track.id, ctx.user_id, meta)
         except Exception as e:
             logger.exception(f"Failed to persist stream for track_id={track.id}: {e}")
             # continue with others rather than aborting the batch
@@ -303,7 +308,7 @@ def _process_stream_batch(records, user_id):
 
 def exploit_streaming_history(
     streaming_history: list[dict],
-    user_id: str,
+    ctx: IngestContext,
     scraper_factory: ScraperFactory | None = None,
 ):
     if scraper_factory is None:
@@ -320,9 +325,9 @@ def exploit_streaming_history(
             "Streaming history file was not provided in exploit_streaming_history function"
         )
 
-    seen_artists = set()
-    seen_releases = set()
-    seen_spotify_tracks = set()
+    seen_artists: set[str] = set()
+    seen_releases: set[str] = set()
+    seen_spotify_tracks: set[str] = set()
 
     track_ids = _filter_new_track_ids(streaming_history)
     if track_ids:
@@ -341,14 +346,11 @@ def exploit_streaming_history(
         }
 
         _process_artists(new_artists, seen_artists, artist_scraper, token)
-
         _process_releases(new_releases, seen_releases, token)
-
         _process_tracks(tracks, track_scraper, seen_spotify_tracks)
-
         _associate_rows(tracks)
 
-    _process_stream_batch(streaming_history, user_id)
+    _process_stream_batch(streaming_history, ctx)
     session.commit()
     session.expunge_all()
 
