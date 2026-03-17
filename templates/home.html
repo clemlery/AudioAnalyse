@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <h1>Lyra — Spotify Listening Analytics</h1>
+    {% if request.session.get('user_id') %}
+    <p class="muted">Connected as <strong>{{ request.session.get('display_name') or request.session.get('user_id') }}</strong></p>
+    {% else %}
+    <p class="warning">Not connected. Go to <a href="/import">Import</a> to authenticate with Spotify.</p>
+    {% endif %}
+</div>
+
+<div class="cards">
+    <div class="card">
+        <h2>1) Import Data</h2>
+        <p>Connect your Spotify account and upload your extended streaming history files.</p>
+        <a href="/import" class="btn">Go to Import</a>
+        <p class="muted">Checks file naming and saves them for processing.</p>
+    </div>
+
+    <div class="card">
+        <h2>2) Top Charts</h2>
+        <p>View your Top N by listening time — artists, tracks, and releases — with bar charts.</p>
+        <a href="/top-items" class="btn">View Top Charts</a>
+        <p class="muted">Sort by minutes streamed or play count.</p>
+    </div>
+
+    <div class="card">
+        <h2>3) Custom Scores</h2>
+        <p>Analyze Interest Score and Commitment Ratio for artists. Compare playcount vs duration for tracks.</p>
+        <a href="/scores" class="btn">Analyze Scores</a>
+        <p class="muted">Configurable weights and filters.</p>
+    </div>
+</div>
+
+<div class="tips">
+    <h3>Usage Tips</h3>
+    <ul>
+        <li>Start with <strong>Import Data</strong> if this is your first time.</li>
+        <li>Make sure your <code>.env</code> file contains valid Spotify credentials.</li>
+        <li>The <code>REDIRECT_URI</code> in your Spotify app settings must match the one in <code>.env</code>.</li>
+    </ul>
+</div>
+{% endblock %}

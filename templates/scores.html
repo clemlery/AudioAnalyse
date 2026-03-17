@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Scores{% endblock %}
+
+{% block content %}
+{% if not user_id %}
+<div class="warning">Not connected. <a href="/import">Connect here</a>.</div>
+{% else %}
+
+<section class="score-section">
+    <h2>Interest Score vs Commitment Ratio — Artists</h2>
+
+    <div class="page-layout">
+        <aside class="sidebar">
+            <form id="artists-form"
+                  hx-post="/scores/artists"
+                  hx-target="#artists-content"
+                  hx-trigger="change">
+
+                <h4>Score Weights</h4>
+                <div class="field">
+                    <label>w_click <span class="muted">(click weight)</span></label>
+                    <input type="number" name="w_click" value="1.0" min="0" step="0.1">
+                </div>
+                <div class="field">
+                    <label>w_done <span class="muted">(done weight)</span></label>
+                    <input type="number" name="w_done" value="0.5" min="0" step="0.1">
+                </div>
+                <div class="field">
+                    <label>w_skip <span class="muted">(skip penalty)</span></label>
+                    <input type="number" name="w_skip" value="0.2" min="0" step="0.1">
+                </div>
+
+                <h4>Filters</h4>
+                <div class="field">
+                    <label>Min play count</label>
+                    <input type="number" name="min_done" value="50" min="0" step="5">
+                </div>
+                <label class="checkbox-label">
+                    <input type="checkbox" name="require_clicks" value="1">
+                    Require clicks &gt; 0
+                </label>
+
+                <h4>Display</h4>
+                <div class="field">
+                    <label>Top N rows</label>
+                    <input type="number" name="top_n" value="50" min="5" step="5">
+                </div>
+                <label class="checkbox-label">
+                    <input type="checkbox" name="annotate" value="1">
+                    Annotate top points
+                </label>
+            </form>
+        </aside>
+
+        <div class="main-content">
+            <div id="artists-content"
+                 hx-post="/scores/artists"
+                 hx-trigger="load"
+                 hx-include="#artists-form">
+                <p class="muted">Loading...</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<hr>
+
+<section class="score-section">
+    <h2>Playcount vs Duration — Tracks</h2>
+
+    <div class="page-layout">
+        <aside class="sidebar">
+            <form id="tracks-form"
+                  hx-post="/scores/tracks"
+                  hx-target="#tracks-content"
+                  hx-trigger="change">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="use_log_x" value="1">
+                    Log scale X (plays)
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" name="to_minutes" value="1">
+                    Show duration in minutes
+                </label>
+            </form>
+        </aside>
+
+        <div class="main-content">
+            <div id="tracks-content"
+                 hx-post="/scores/tracks"
+                 hx-trigger="load"
+                 hx-include="#tracks-form">
+                <p class="muted">Loading...</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endif %}
+{% endblock %}

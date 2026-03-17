@@ -1,0 +1,22 @@
+{% if error %}
+<p class="msg-error">Error: {{ error }}</p>
+{% elif not chart_b64 %}
+<p class="muted">No data available.</p>
+{% else %}
+<div class="chart-container">
+    <img src="data:image/png;base64,{{ chart_b64 }}" alt="Scatter plot" class="chart-img">
+</div>
+
+<div class="two-col">
+    <div>
+        <h4>Top by Interest Score</h4>
+        <div class="table-container">{{ table_interest_html | safe }}</div>
+        <a href="{{ csv_uri_interest }}" download="top_interest_artists.csv" class="btn btn-outline">Download CSV</a>
+    </div>
+    <div>
+        <h4>Top by Commitment Ratio</h4>
+        <div class="table-container">{{ table_commitment_html | safe }}</div>
+        <a href="{{ csv_uri_commitment }}" download="top_commitment_artists.csv" class="btn btn-outline">Download CSV</a>
+    </div>
+</div>
+{% endif %}

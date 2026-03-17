@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Top Items{% endblock %}
+
+{% block content %}
+<div class="page-layout">
+    <aside class="sidebar">
+        <h3>Controls</h3>
+        <form id="controls-form"
+              hx-post="/top-items/data"
+              hx-target="#content"
+              hx-trigger="change">
+            <input type="hidden" name="tab" id="active-tab" value="tracks">
+
+            <fieldset>
+                <legend>Sort by</legend>
+                <label><input type="radio" name="sort" value="minutes" checked> Minutes streamed</label>
+                <label><input type="radio" name="sort" value="playcount"> Play count</label>
+            </fieldset>
+
+            <div class="field">
+                <label for="n-range">Show top <span id="n-val">10</span></label>
+                <input type="range" id="n-range" name="n" min="5" max="50" value="10" step="5"
+                       oninput="document.getElementById('n-val').textContent = this.value">
+            </div>
+        </form>
+    </aside>
+
+    <div class="main-content">
+        {% if not user_id %}
+        <div class="warning">Not connected. <a href="/import">Connect here</a>.</div>
+        {% else %}
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab(this, 'tracks')">&#127925; Tracks</button>
+            <button class="tab-btn" onclick="switchTab(this, 'artists')">&#128100; Artists</button>
+            <button class="tab-btn" onclick="switchTab(this, 'releases')">&#128191; Releases</button>
+        </div>
+
+        <div id="content"
+             hx-post="/top-items/data"
+             hx-trigger="load"
+             hx-include="#controls-form">
+            <p class="muted">Loading...</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function switchTab(btn, tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('active-tab').value = tab;
+    // dispatch change to trigger the hx-trigger="change" on the form
+    document.getElementById('controls-form').dispatchEvent(new Event('change'));
+}
+</script>
+{% endblock %}
