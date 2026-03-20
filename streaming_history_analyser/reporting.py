@@ -1,62 +1,27 @@
 # reporting.py
 
-# We import the DAOs
+import os
 from collections import defaultdict
-import csv
 from sqlalchemy import func, or_
+import pandas as pd
 
-
-# We import the tables
+from config import session
+from constants.service import RELEASE_TYPE, CSV_BASE_DIR
 from models.sql_alchemy_models.artist_sql_model import Artist
-from models.sql_alchemy_models.metrics import (
-    ArtistMetricsSnapshot,
-    TrackMetricsSnapshot,
-)
+from models.sql_alchemy_models.metrics import ArtistMetricsSnapshot, TrackMetricsSnapshot
 from models.sql_alchemy_models.release_sql_model import Release
+from models.sql_alchemy_models.spotify_track_sql_model import SpotifyTrack
 from models.sql_alchemy_models.track_sql_model import Track
 from models.sql_alchemy_models.track_stream_day_sql_model import TrackStreamDay
 from models.sql_alchemy_models.track_stream_sql_model import TrackStream
-from models.sql_alchemy_models.spotify_track_sql_model import SpotifyTrack
-
-from config import session
 
 
-# We import the user ID of the only user we have in the database
-from constants.service import USER_ID, RELEASE_TYPE
+# ---------------------------------------------------------------------------
+# Query functions — return DataFrames, no I/O side effects
+# ---------------------------------------------------------------------------
 
-
-from collections import defaultdict
-from sqlalchemy import func
-import csv
-
-
-def artists_data_to_csv(session, output_file="data/csv/artists_data.csv"):
-    """
-    Export aggregated stream and release statistics for all artists to a CSV file.
-
-    Args:
-        session: SQLAlchemy session object
-        output_file: Path to the output CSV file
-    """
-    # Define the output columns
-    fieldnames = [
-        "Artist_Id",
-        "Name",
-        "Genres",
-        "Popularity",
-        "Followers",
-        "Minutes_Streamed",
-        "Click_Row_Count",
-        "Skipped_Count",
-        "Track_Done_Count",
-        "Track_Count",
-        "Single_Number",
-        "Album_Number",
-        "EP_Number",
-        "Monthly_Listeners",
-    ]
-
-    # Initialize stats with defaults for each artist
+def get_artists_data(session, user_id: str) -> pd.DataFrame:
+    """Return aggregated artist stream statistics for a given user."""
     stats = defaultdict(
         lambda: {
             "Artist_Id": 0,
@@ -76,7 +41,6 @@ def artists_data_to_csv(session, output_file="data/csv/artists_data.csv"):
         }
     )
 
-    # Aggregate stream data per artist (all artists)
     stream_q = (
         session.query(
             Artist.id.label("artist_id"),
@@ -94,6 +58,7 @@ def artists_data_to_csv(session, output_file="data/csv/artists_data.csv"):
         .join(Artist.tracks)
         .join(Track.streams)
         .join(Artist.artist_metrics)
+        .filter(TrackStream.user_id == user_id)
         .group_by(Artist.id, ArtistMetricsSnapshot.monthly_listeners)
     )
 
@@ -116,7 +81,7 @@ def artists_data_to_csv(session, output_file="data/csv/artists_data.csv"):
             }
         )
 
-    # Aggregate release counts per artist (all artists)
+    streamed_artist_ids = set(stats.keys())
     release_q = (
         session.query(
             Artist.id.label("artist_id"),
@@ -124,6 +89,7 @@ def artists_data_to_csv(session, output_file="data/csv/artists_data.csv"):
             func.count(Release.id).label("count"),
         )
         .join(Release.artists)
+        .filter(Artist.id.in_(streamed_artist_ids))
         .group_by(Artist.id, Release.release_type)
     )
 
@@ -136,40 +102,11 @@ def artists_data_to_csv(session, output_file="data/csv/artists_data.csv"):
         elif rtype == RELEASE_TYPE.EP.value:
             entry["EP_Number"] = count
 
-    # Write out to CSV
-    with open(output_file, "w", newline="", encoding="utf-8") as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        for data in stats.values():
-            writer.writerow(data)
-
-    print(f"Exported data for {len(stats)} artists to {output_file}")
+    return pd.DataFrame(list(stats.values()))
 
 
-def tracks_data_to_csv(session, output_file="data/csv/tracks_data.csv"):
-    """
-    Export aggregated stream statistics for all tracks to a CSV file.
-
-    Args:
-        session: SQLAlchemy session object
-        output_file: Path to the output CSV file
-    """
-    # Define the output columns
-    fieldnames = [
-        "Track_Id",
-        "Name",
-        "Duration_Ms",
-        "First_Played_At",
-        "Last_Played_At",
-        "Track_Done_Count",
-        "Skipped_Count",
-        "Click_Row_Count",
-        "Minutes_Streamed",
-        "Global_Playcount",
-        "Artist_Id",
-    ]
-
-    # Initialize stats with defaults for each track
+def get_tracks_data(session, user_id: str) -> pd.DataFrame:
+    """Return aggregated track stream statistics for a given user."""
     stats = defaultdict(
         lambda: {
             "Track_Id": 0,
@@ -186,7 +123,6 @@ def tracks_data_to_csv(session, output_file="data/csv/tracks_data.csv"):
         }
     )
 
-    # Aggregate stream data per track (all tracks)
     stream_q = (
         session.query(
             Track.id.label("track_id"),
@@ -204,6 +140,7 @@ def tracks_data_to_csv(session, output_file="data/csv/tracks_data.csv"):
         .join(Track.streams)
         .join(Track.track_metrics)
         .join(Track.artists)
+        .filter(TrackStream.user_id == user_id)
         .group_by(
             Track.id,
             TrackMetricsSnapshot.playcount,
@@ -230,32 +167,11 @@ def tracks_data_to_csv(session, output_file="data/csv/tracks_data.csv"):
             }
         )
 
-    # Write out to CSV
-    with open(output_file, "w", newline="", encoding="utf-8") as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        for data in stats.values():
-            writer.writerow(data)
-
-    print(f"Exported data for {len(stats)} track to {output_file}")
+    return pd.DataFrame(list(stats.values()))
 
 
-def releases_data_to_csv(session, output_file="data/csv/releases_data.csv"):
-    # Define the output columns
-    fieldnames = [
-        "Name",
-        "Release_Type",
-        "Popularity",
-        "Total_Duration_m",
-        "Release_Date",
-        "Total_Tracks",
-        "Track_Done_Count",
-        "Skipped_Count",
-        "Click_Row_Count",
-        "Minutes_Streamed",
-    ]
-
-    # Initialize stats with defaults for each track
+def get_releases_data(session, user_id: str) -> pd.DataFrame:
+    """Return aggregated release stream statistics for a given user."""
     stats = defaultdict(
         lambda: {
             "Name": None,
@@ -271,7 +187,6 @@ def releases_data_to_csv(session, output_file="data/csv/releases_data.csv"):
         }
     )
 
-    # Aggregate stream data per release (all release)
     stream_q = (
         session.query(
             Release.id.label("release_id"),
@@ -290,6 +205,7 @@ def releases_data_to_csv(session, output_file="data/csv/releases_data.csv"):
         .join(SpotifyTrack.canonical)
         .join(Track.streams)
         .filter(or_(Release.release_type == "album", Release.release_type == "ep"))
+        .filter(TrackStream.user_id == user_id)
         .group_by(Release.id)
     )
 
@@ -309,25 +225,11 @@ def releases_data_to_csv(session, output_file="data/csv/releases_data.csv"):
             }
         )
 
-    # Write out to CSV
-    with open(output_file, "w", newline="", encoding="utf-8") as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        for data in stats.values():
-            writer.writerow(data)
-
-    print(f"Exported data for {len(stats)} release to {output_file}")
+    return pd.DataFrame(list(stats.values()))
 
 
-def track_stream_day_to_csv(session, output_file="data/csv/stream_day_data.csv"):
-    fieldnames = [
-        "Date",
-        "Track_Done_Count",
-        "Skipped_Count",
-        "Click_Row_Count",
-        "Total_Duration_Play_m",
-    ]
-
+def get_stream_day_data(session, user_id: str) -> pd.DataFrame:
+    """Return daily stream aggregates for a given user."""
     stats = defaultdict(
         lambda: {
             "Date": "",
@@ -338,13 +240,17 @@ def track_stream_day_to_csv(session, output_file="data/csv/stream_day_data.csv")
         }
     )
 
-    stream_q = session.query(
-        TrackStreamDay.date,
-        func.sum(TrackStreamDay.track_done_count).label("track_done_count"),
-        func.sum(TrackStreamDay.skipped_count).label("skipped_count"),
-        func.sum(TrackStreamDay.click_row_count).label("click_count"),
-        func.sum(TrackStreamDay.total_duration_play_s).label("secondes_streamed"),
-    ).group_by(TrackStreamDay.date)
+    stream_q = (
+        session.query(
+            TrackStreamDay.date,
+            func.sum(TrackStreamDay.track_done_count).label("track_done_count"),
+            func.sum(TrackStreamDay.skipped_count).label("skipped_count"),
+            func.sum(TrackStreamDay.click_row_count).label("click_count"),
+            func.sum(TrackStreamDay.total_duration_play_s).label("secondes_streamed"),
+        )
+        .filter(TrackStreamDay.user_id == user_id)
+        .group_by(TrackStreamDay.date)
+    )
 
     for row in stream_q:
         stats[row.date].update(
@@ -357,8 +263,40 @@ def track_stream_day_to_csv(session, output_file="data/csv/stream_day_data.csv")
             }
         )
 
-    with open(output_file, "w", newline="", encoding="utf-8") as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        for data in stats.values():
-            writer.writerow(data)
+    return pd.DataFrame(list(stats.values()))
+
+
+# ---------------------------------------------------------------------------
+# CSV export functions — thin wrappers around the query functions above
+# ---------------------------------------------------------------------------
+
+def artists_data_to_csv(session, user_id: str, output_file: str | None = None):
+    if output_file is None:
+        output_file = f"{CSV_BASE_DIR}/{user_id}/artists_data.csv"
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+    df = get_artists_data(session, user_id)
+    df.to_csv(output_file, index=False)
+
+
+def tracks_data_to_csv(session, user_id: str, output_file: str | None = None):
+    if output_file is None:
+        output_file = f"{CSV_BASE_DIR}/{user_id}/tracks_data.csv"
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+    df = get_tracks_data(session, user_id)
+    df.to_csv(output_file, index=False)
+
+
+def releases_data_to_csv(session, user_id: str, output_file: str | None = None):
+    if output_file is None:
+        output_file = f"{CSV_BASE_DIR}/{user_id}/releases_data.csv"
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+    df = get_releases_data(session, user_id)
+    df.to_csv(output_file, index=False)
+
+
+def track_stream_day_to_csv(session, user_id: str, output_file: str | None = None):
+    if output_file is None:
+        output_file = f"{CSV_BASE_DIR}/{user_id}/stream_day_data.csv"
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+    df = get_stream_day_data(session, user_id)
+    df.to_csv(output_file, index=False)

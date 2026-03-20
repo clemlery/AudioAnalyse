@@ -1,0 +1,9 @@
+{% if error %}
+<p class="msg-error">Error: {{ error }}</p>
+{% elif not chart_b64 %}
+<p class="muted">No data available.</p>
+{% else %}
+<div class="chart-container">
+    <img src="data:image/png;base64,{{ chart_b64 }}" alt="Scatter plot" class="chart-img">
+</div>
+{% endif %}

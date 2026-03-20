@@ -24,17 +24,22 @@ class ORDER_TYPE(enum.Enum):
 # This variable defines every how many new rows in the database we commit
 BATCH_SIZE: Final[int] = 200
 
-# The Spotify ID of the only User that is in the table User
-USER_ID: Final[str] = "31b3yikgfs3a6dypwxxij2ts5jz4"
-
 # Folder streaming history data path
 UPLOADS_PATH: Final[str] = "./data/uploads/"
 
 # Folder streaming history data path (test files)
 UPLOADS_TEST_PATH: Final[str] = "./data/test/"
 
-# Path of the csv files containing all the most interesting data in the database
-CSV_TRACK_PATH: Final[str] = "./data/csv/tracks_data.csv"
-CSV_ARTIST_PATH: Final[str] = "./data/csv/artists_data.csv"
-CSV_RELEASE_PATH: Final[str] = "./data/csv/releases_data.csv"
-CSV_STREAM_DAY_PATH: Final[str] = "./data/csv/stream_day_data.csv"
+# Base directory for per-user CSV exports
+CSV_BASE_DIR: Final[str] = "./data/csv"
+
+
+def user_csv_paths(user_id: str) -> dict[str, str]:
+    """Return the CSV file paths for a given user."""
+    base = f"{CSV_BASE_DIR}/{user_id}"
+    return {
+        "tracks": f"{base}/tracks_data.csv",
+        "artists": f"{base}/artists_data.csv",
+        "releases": f"{base}/releases_data.csv",
+        "stream_day": f"{base}/stream_day_data.csv",
+    }
