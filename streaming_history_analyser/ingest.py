@@ -12,9 +12,9 @@ from streaming_history_analyser.process import exploit_streaming_history, Ingest
 
 
 def delete_log_backup():
-    # We delete all the logs file to restart to zero
+    # We delete all the backup log files to restart to zero
     for filepath in glob.glob("./log/exploit_streaming_history.log*"):
-        if filepath == "./log/exploit_streaming_history.log":
+        if os.path.basename(filepath) == "exploit_streaming_history.log":
             pass
         else:
             os.remove(filepath)
@@ -51,7 +51,7 @@ def load_streaming_history_folder(user_id: str):
 def load_streaming_history_file(filename: str):
     path = UPLOADS_PATH + filename
     try:
-        with open(path, "r") as f:
+        with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError) as e:
         raise e

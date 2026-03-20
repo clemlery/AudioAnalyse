@@ -38,7 +38,35 @@
             <button type="submit" class="btn">Upload</button>
         </form>
         <div id="upload-results" style="margin-top: 1rem"></div>
+
+        <div id="uploads-list" style="margin-top: 1rem">
+            {% if uploads %}
+            <ul>
+                {% for f in uploads %}<li>{{ f }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+        </div>
         {% endif %}
     </section>
+
+    {% if user_id %}
+    <section>
+        <h2>3) Start import</h2>
+        {% if uploads %}
+        <p class="muted">{{ uploads | length }} file(s) ready to process.</p>
+        {% else %}
+        <p class="muted">No files uploaded yet. Upload your files above first.</p>
+        {% endif %}
+        <button class="btn"
+                hx-post="/import/process"
+                hx-target="#job-status"
+                hx-swap="outerHTML"
+                {% if not uploads %}disabled{% endif %}>
+            Start import
+        </button>
+
+        <div id="job-status" style="margin-top: 1.5rem"></div>
+    </section>
+    {% endif %}
 </div>
 {% endblock %}

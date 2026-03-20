@@ -254,12 +254,16 @@ New-Item -ItemType Directory -Force -Path data/uploads, data/csv, log
 uvicorn app:app --reload
 ```
 
-Then open `http://localhost:8000`. The app guides you through:
+Then open `http://localhost:8000`. The app has four pages:
 
-1. **Home** — overview and navigation
-2. **Import** — authenticate with Spotify and upload your JSON export files; ingestion runs in the background with live progress
-3. **Top items** — browse your most-listened artists, tracks, and releases
-4. **Scores** — explore Interest Score and Commitment Ratio metrics
+| Route | Description |
+|---|---|
+| `/` | Home page — overview and navigation |
+| `/import` | Connect your Spotify account via OAuth, upload your JSON export files, then launch ingestion. Progress (current file, % done, log tail) is polled live in the browser. |
+| `/top-items` | Browse your top tracks, artists, or releases sorted by play count or minutes streamed. Renders a bar chart and a downloadable CSV. |
+| `/scores` | Two analysis views: **Artists** — scatter plot of Interest Score vs Commitment Ratio with configurable weights; **Tracks** — playcount vs duration scatter plot with optional log scale. |
+
+> All pages except Home require Spotify authentication. Connect first via `/import`.
 
 ### CLI
 
@@ -267,7 +271,7 @@ Then open `http://localhost:8000`. The app guides you through:
 python main.py
 ```
 
-Runs the streaming history pipeline directly from the command line.
+Runs the streaming history pipeline directly from the command line, without the web interface.
 
 ## How It Works
 

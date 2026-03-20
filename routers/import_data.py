@@ -63,10 +63,12 @@ def _run_ingestion(user_id: str, filenames: list[str]) -> None:
         load_streaming_history_file,
     )
     from streaming_history_analyser.process import IngestContext, exploit_streaming_history
+    from streaming_history_analyser.factory import BrowserTokenSource, ScraperFactory
 
     try:
         delete_log_backup()
         ctx = IngestContext(user_id=user_id)
+        scraper_factory = ScraperFactory(BrowserTokenSource())
 
         for filename in filenames:
             with lock:
@@ -74,7 +76,7 @@ def _run_ingestion(user_id: str, filenames: list[str]) -> None:
                 job.message = f"Processing {filename}…"
 
             streaming_history = load_streaming_history_file(filename)
-            exploit_streaming_history(streaming_history, ctx)
+            exploit_streaming_history(streaming_history, ctx, scraper_factory)
 
             with lock:
                 job.files_done += 1
