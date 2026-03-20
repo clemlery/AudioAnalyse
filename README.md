@@ -65,6 +65,17 @@ uv --version
 python3 --version  # must be 3.12+
 ```
 
+```powershell
+# Install uv (Windows — PowerShell)
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# Verify
+uv --version
+python --version  # must be 3.12+
+```
+
+> On Windows, Python 3.12+ can also be installed from [python.org](https://www.python.org/downloads/) or via `winget install Python.Python.3.12`. Make sure to check **"Add Python to PATH"** during installation.
+
 #### PostgreSQL
 
 ```bash
@@ -81,16 +92,33 @@ sudo postgresql-setup --initdb
 sudo systemctl enable --now postgresql
 ```
 
+```powershell
+# Windows — using winget
+winget install PostgreSQL.PostgreSQL
+
+# Or download the installer from https://www.enterprisedb.com/downloads/postgres-postgresql-downloads
+# During installation, note the password you set for the 'postgres' superuser.
+```
+
 After installation, create a dedicated database user (or use an existing one):
 
 ```bash
+# Linux / macOS
 sudo -u postgres psql
 ```
+
+```powershell
+# Windows — open a new PowerShell and run:
+psql -U postgres
+```
+
 ```sql
 CREATE USER your_db_user WITH PASSWORD 'your_db_password';
 ALTER USER your_db_user CREATEDB;
 \q
 ```
+
+> On Windows, PostgreSQL tools (`psql`, `createdb`) are installed under `C:\Program Files\PostgreSQL\<version>\bin`. Add this directory to your `PATH` environment variable so the commands are available in your terminal.
 
 #### Google Chrome + ChromeDriver
 
@@ -104,6 +132,12 @@ sudo apt install chromium-driver
 brew install --cask chromedriver
 
 # Or use the selenium-manager bundled with Selenium 4.6+ (automatic)
+```
+
+```powershell
+# Windows — install Google Chrome from https://www.google.com/chrome/
+# ChromeDriver is handled automatically by Selenium 4.6+ via selenium-manager.
+# No manual install needed in most cases.
 ```
 
 > Selenium 4.6+ ships with `selenium-manager` which can download ChromeDriver automatically. If it works on your machine, no manual install is needed.
@@ -203,7 +237,13 @@ You should see the tables: `artist`, `track`, `release`, `spotify_track`, `user`
 Make sure the following directories exist (they are in `.gitignore` but required at runtime):
 
 ```bash
+# Linux / macOS
 mkdir -p data/uploads data/csv log
+```
+
+```powershell
+# Windows (PowerShell)
+New-Item -ItemType Directory -Force -Path data/uploads, data/csv, log
 ```
 
 ## Usage
