@@ -1,6 +1,6 @@
-# Lyra — Spotify Listening Analytics & Recommendations
+# Lyra — Spotify Listening Analytics
 
-A multi-user platform that ingests Spotify extended streaming history, enriches it with metadata from the Spotify API and web scraping, and turns raw play counts into personalized music recommendations through an interactive Streamlit dashboard.
+A personal analytics platform that ingests Spotify extended streaming history, enriches it with metadata from the Spotify API and web scraping, and turns raw play counts into insights through an interactive web dashboard.
 
 ## Table of Contents
 
@@ -15,34 +15,36 @@ A multi-user platform that ingests Spotify extended streaming history, enriches 
 
 ## Overview
 
-Spotify lets you export your full listening history as a set of JSON files. Lyra takes those files, enriches every track with metadata from the Spotify Web API (album, artists, popularity, audio features) and from web scraping (monthly listeners, global playcounts), and stores the result in a structured PostgreSQL database.
+Spotify lets you export your full listening history as a set of JSON files. Lyra takes those files, enriches every track with metadata from the Spotify Web API (album, artists, popularity) and from web scraping (monthly listeners, global playcounts), and stores the result in a structured PostgreSQL database.
 
-From there, each authenticated user gets a personal analytics dashboard — top artists, top tracks, listening trends over time, and custom engagement metrics (Interest Score, Commitment Ratio). Because the data is shared across users, Lyra can also identify listeners with similar taste profiles and use that signal to surface music you're likely to enjoy but haven't discovered yet.
+From there, you get a personal analytics dashboard — top artists, top tracks, listening trends over time, and custom engagement metrics (Interest Score, Commitment Ratio).
 
-The goal is simple: own your listening data, understand your habits deeply, and get recommendations that are actually grounded in what you listen to — not a black-box algorithm.
+The goal is simple: own your listening data, understand your habits deeply, and get insights grounded in what you actually listen to.
 
 ## Features
 
-- **Data ingestion** — batch-process `Streaming_History_Audio_*.json` files
+- **Data ingestion** — batch-process `Streaming_History_Audio_*.json` files from your Spotify export
 - **API enrichment** — fetch track, artist, and album metadata from the Spotify Web API
 - **Web scraping** — collect monthly listeners and playcounts via Selenium
 - **PostgreSQL persistence** — full relational model with migrations via Alembic
 - **Daily aggregates** — per-track stream counts, skip counts, and play durations rolled up by day
 - **Historical snapshots** — track how artist monthly listeners and track playcounts evolve over time
-- **Streamlit dashboard** — multi-page UI to browse top artists/tracks/releases and custom scoring metrics
+- **Web dashboard** — multi-page FastAPI app with Jinja2 templates to browse top artists/tracks/releases and custom scoring metrics
+- **Async ingestion** — background job with live progress tracking in the UI
 - **CSV exports** — export summary tables for use outside the app
 
 ## Tech Stack
 
 | Layer | Library |
 |---|---|
-| Web UI | Streamlit |
+| Web framework | FastAPI + Uvicorn |
+| UI templates | Jinja2 + HTML/CSS |
 | Data analysis | Pandas, Matplotlib |
 | ORM | SQLAlchemy |
 | Migrations | Alembic |
 | Database | PostgreSQL |
 | API client | Requests (Spotify Web API) |
-| Scraping | Selenium, Playwright |
+| Scraping | Selenium |
 | Validation | Pydantic |
 | Runtime | Python 3.12, uv |
 
@@ -130,8 +132,6 @@ sudo apt install chromium-driver
 
 # macOS (Homebrew)
 brew install --cask chromedriver
-
-# Or use the selenium-manager bundled with Selenium 4.6+ (automatic)
 ```
 
 ```powershell
@@ -151,7 +151,7 @@ The app uses the Spotify Web API for metadata enrichment and OAuth authenticatio
 1. Go to [developer.spotify.com/dashboard](https://developer.spotify.com/dashboard) and log in.
 2. Click **Create app**.
 3. Fill in a name and description (anything works).
-4. Set the **Redirect URI** to: `http://localhost:8501/callback`
+4. Set the **Redirect URI** to: `http://localhost:8000/callback`
 5. Select **Web API** as the API to use.
 6. Save and open the app settings — copy the **Client ID** and **Client Secret**.
 
@@ -161,7 +161,7 @@ The app uses the Spotify Web API for metadata enrichment and OAuth authenticatio
 
 ```bash
 git clone <repo-url>
-cd VibeCoding-AudioAnalyse
+cd Vibecode-AudioAnalyse
 
 # Install all dependencies in a virtual environment
 pip install -e .
@@ -179,10 +179,10 @@ Create a `.env` file at the project root with the following content:
 # Spotify OAuth — from your Developer Dashboard
 CLIENT_ID=your_spotify_client_id
 CLIENT_SECRET=your_spotify_client_secret
-REDIRECT_URI=http://localhost:8501/callback
+REDIRECT_URI=http://localhost:8000/callback
 
-# Streamlit session
-BASE_URL=http://localhost:8501
+# Web app session
+BASE_URL=http://localhost:8000
 SECRET_KEY=some_random_secret_string
 
 # PostgreSQL connection
@@ -197,7 +197,7 @@ DATABASE=lyra
 | `CLIENT_ID` | Spotify app client ID |
 | `CLIENT_SECRET` | Spotify app client secret |
 | `REDIRECT_URI` | Must match exactly what you set in the Spotify dashboard |
-| `BASE_URL` | Base URL of the Streamlit server |
+| `BASE_URL` | Base URL of the web server |
 | `SECRET_KEY` | Arbitrary secret used for session signing |
 | `UID` | PostgreSQL user |
 | `PASSWORD` | PostgreSQL user password |
@@ -251,14 +251,15 @@ New-Item -ItemType Directory -Force -Path data/uploads, data/csv, log
 ### Web UI (recommended)
 
 ```bash
-streamlit run 1_home.py
+uvicorn app:app --reload
 ```
 
-Then open `http://localhost:8501`. The app guides you through:
+Then open `http://localhost:8000`. The app guides you through:
 
-1. **Import** — authenticate with Spotify and upload your JSON export files
-2. **Top items** — browse your most-listened artists, tracks, and releases
-3. **Custom values** — explore Interest Score and Commitment Ratio metrics
+1. **Home** — overview and navigation
+2. **Import** — authenticate with Spotify and upload your JSON export files; ingestion runs in the background with live progress
+3. **Top items** — browse your most-listened artists, tracks, and releases
+4. **Scores** — explore Interest Score and Commitment Ratio metrics
 
 ### CLI
 
@@ -266,7 +267,7 @@ Then open `http://localhost:8501`. The app guides you through:
 python main.py
 ```
 
-Currently runs the streaming history visualization pipeline directly.
+Runs the streaming history pipeline directly from the command line.
 
 ## How It Works
 
@@ -287,20 +288,37 @@ process.py — for each new track:
 reporting.py — export CSV summaries (data/csv/)
         │
         ▼
-visualize.py / Streamlit pages — charts and analysis
+FastAPI routers + Jinja2 templates — charts and analysis
 ```
 
 The scraper obtains a valid Spotify auth token by intercepting CDP network logs from a headless Chrome session managed by `dao/service.py:BrowserManager`.
+
+Ingestion is launched as a background thread from the `/import` route, with job status (progress, current file, errors) tracked in memory and polled by the UI via HTMX fragments.
 
 ## Project Structure
 
 ```
 .
-├── 1_home.py                        # Streamlit entry point
+├── app.py                           # FastAPI application entry point
 ├── main.py                          # CLI entry point
 ├── config.py                        # DB engine, session, logging
 ├── auth.py                          # Spotify OAuth helpers
 ├── constants/                       # API endpoints, paths, enums
+├── routers/                         # FastAPI route handlers
+│   ├── home.py
+│   ├── top_items.py
+│   ├── scores.py
+│   ├── import_data.py
+│   ├── job.py                       # In-memory job state for ingestion
+│   └── utils.py
+├── templates/                       # Jinja2 HTML templates
+│   ├── base.html
+│   ├── home.html
+│   ├── top_items.html
+│   ├── scores.html
+│   ├── import.html
+│   └── fragments/                   # HTMX partial templates
+├── static/                          # CSS and static assets
 ├── models/
 │   ├── data_class_models/           # Pydantic models for API responses
 │   └── sql_alchemy_models/          # ORM table definitions
@@ -314,7 +332,6 @@ The scraper obtains a valid Spotify auth token by intercepting CDP network logs 
 │   ├── factory.py                   # ScraperFactory (dependency injection)
 │   ├── reporting.py                 # CSV export
 │   └── visualize.py                 # Matplotlib charts
-├── pages/                           # Streamlit sub-pages
 ├── alembic/                         # DB migration scripts
 ├── data/
 │   ├── uploads/                     # Drop your JSON exports here
