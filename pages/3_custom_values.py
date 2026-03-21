@@ -3,8 +3,25 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
-from streaming_history_analyser.visualize import scatter_calculate_scores
-from constants.service import CSV_TRACK_PATH, CSV_ARTIST_PATH
+from config import session as db_session
+from streaming_history_analyser.reporting import get_artists_data, get_tracks_data
+
+user_id: str | None = st.session_state.get("user_id")
+if not user_id:
+    st.warning("You are not connected. Please authenticate on the Import page first.")
+    st.page_link("pages/4_import_data.py", label="Go to Import", icon="🗂️")
+    st.stop()
+
+
+@st.cache_data(show_spinner="Loading data…", ttl=300)
+def _load_artists(uid: str) -> pd.DataFrame:
+    return get_artists_data(db_session, uid)
+
+
+@st.cache_data(show_spinner="Loading data…", ttl=300)
+def _load_tracks(uid: str) -> pd.DataFrame:
+    return get_tracks_data(db_session, uid)
+
 
 # ---------------------------
 # Sidebar: global controls
@@ -27,16 +44,7 @@ with st.sidebar:
     top_n = st.slider("Top N rows", min_value=5, max_value=100, value=50, step=5)
 
 
-# ---------------------------
-# Utilities
-# ---------------------------
-@st.cache_data(show_spinner=False)
-def load_csv(path: str) -> pd.DataFrame:
-    return pd.read_csv(path)
-
-
 def diag_minmax(ax, x, y):
-    # simple min→max guide line
     try:
         ax.plot([x.min(), x.max()], [y.min(), y.max()])
     except Exception:
@@ -67,39 +75,30 @@ with t1:
     st.subheader("Interest Score vs Commitment Ratio — Artists")
 
     try:
-        a_df = load_csv(CSV_ARTIST_PATH)
-    except FileNotFoundError:
-        st.error(f"Artists CSV not found at: `{CSV_ARTIST_PATH}`")
-        st.stop()
+        a_df = _load_artists(user_id)
     except Exception as e:
         st.exception(e)
         st.stop()
 
-    # Validate expected columns
     needed_cols = {"Name", "Track_Done_Count", "Click_Row_Count", "Skipped_Count"}
     missing = needed_cols - set(a_df.columns)
     if missing:
-        st.error(f"Missing columns in artists CSV: {', '.join(sorted(missing))}")
+        st.error(f"Missing columns in artists data: {', '.join(sorted(missing))}")
         st.stop()
 
-    # Filters
     filt = a_df["Track_Done_Count"] > min_done
     if require_clicks:
         filt &= a_df["Click_Row_Count"] > 0
     df = a_df.loc[filt].copy()
 
-    # Compute metrics
     df["Interest_Score"] = (
         w_done * df["Track_Done_Count"]
         + w_click * df["Click_Row_Count"]
         - w_skip * df["Skipped_Count"]
     )
     denom = df["Track_Done_Count"] + df["Click_Row_Count"] + df["Skipped_Count"]
-    # Avoid division by zero
     denom = denom.replace(0, np.nan)
     df["Commitment_Ratio"] = (df["Track_Done_Count"] + df["Click_Row_Count"]) / denom
-
-    # Clean (drop NaNs produced by denom==0)
     df = df.dropna(subset=["Commitment_Ratio"])
 
     c1, c2 = st.columns([2, 1])
@@ -123,7 +122,6 @@ with t1:
         )
         show_raw = st.checkbox("Show raw filtered table", value=False)
 
-    # Tables (Top N by each metric)
     top_interest = (
         df[["Name", "Interest_Score", "Commitment_Ratio"]]
         .sort_values("Interest_Score", ascending=False)
@@ -136,15 +134,10 @@ with t1:
     )
 
     if annotate and not df.empty:
-        # Annotate the single best by each metric (avoid clutter)
         best_i = top_interest.iloc[0]
         best_c = top_commitment.iloc[0]
-        ax.annotate(
-            best_i["Name"], (best_i["Interest_Score"], best_i["Commitment_Ratio"])
-        )
-        ax.annotate(
-            best_c["Name"], (best_c["Interest_Score"], best_c["Commitment_Ratio"])
-        )
+        ax.annotate(best_i["Name"], (best_i["Interest_Score"], best_i["Commitment_Ratio"]))
+        ax.annotate(best_c["Name"], (best_c["Interest_Score"], best_c["Commitment_Ratio"]))
         st.pyplot(fig, use_container_width=True)
 
     st.markdown("#### Top tables")
@@ -152,23 +145,15 @@ with t1:
     with cti:
         st.write(f"Top {len(top_interest)} by Interest Score")
         st.dataframe(top_interest, use_container_width=True)
-        df_download_button(
-            top_interest, "Download Top by Interest (CSV)", "top_interest_artists.csv"
-        )
+        df_download_button(top_interest, "Download Top by Interest (CSV)", "top_interest_artists.csv")
     with ctc:
         st.write(f"Top {len(top_commitment)} by Commitment Ratio")
         st.dataframe(top_commitment, use_container_width=True)
-        df_download_button(
-            top_commitment,
-            "Download Top by Commitment (CSV)",
-            "top_commitment_artists.csv",
-        )
+        df_download_button(top_commitment, "Download Top by Commitment (CSV)", "top_commitment_artists.csv")
 
     if show_raw:
         st.markdown("#### Filtered raw data")
-        st.dataframe(
-            df.sort_values("Interest_Score", ascending=False), use_container_width=True
-        )
+        st.dataframe(df.sort_values("Interest_Score", ascending=False), use_container_width=True)
         df_download_button(df, "Download Filtered (CSV)", "artists_filtered.csv")
 
 # ===========================================================
@@ -178,22 +163,17 @@ with t2:
     st.subheader("Playcount vs Duration — Tracks")
 
     try:
-        t_df = load_csv(CSV_TRACK_PATH)
-    except FileNotFoundError:
-        st.error(f"Tracks CSV not found at: `{CSV_TRACK_PATH}`")
-        st.stop()
+        t_df = _load_tracks(user_id)
     except Exception as e:
         st.exception(e)
         st.stop()
 
-    # Validate expected columns
     needed_cols = {"Track_Done_Count", "Duration_Ms"}
     missing = needed_cols - set(t_df.columns)
     if missing:
-        st.error(f"Missing columns in tracks CSV: {', '.join(sorted(missing))}")
+        st.error(f"Missing columns in tracks data: {', '.join(sorted(missing))}")
         st.stop()
 
-    # Display options
     c1, c2, c3 = st.columns(3)
     with c1:
         use_log_x = st.checkbox("Log scale X (plays)", value=False)
@@ -202,7 +182,6 @@ with t2:
     with c3:
         show_table = st.checkbox("Show table & download", value=False)
 
-    # Prepare data
     plot_df = t_df.copy()
     if to_minutes:
         plot_df["Duration_Min"] = plot_df["Duration_Ms"] / 60000.0
@@ -212,7 +191,6 @@ with t2:
         y_col = "Duration_Ms"
         y_label = "Track Duration (ms)"
 
-    # Scatter
     fig2, ax2 = plt.subplots(figsize=(10, 6))
     ax2.scatter(plot_df["Track_Done_Count"], plot_df[y_col])
     ax2.set_xlabel("Track Playcount")
@@ -227,19 +205,15 @@ with t2:
     st.pyplot(fig2, use_container_width=True)
 
     if show_table:
-        # keep only relevant columns + common labels when available
         cols = [
-            c
-            for c in ["Name", "Artist_Name", "Track_Done_Count", y_col, "Duration_Ms"]
+            c for c in ["Name", "Artist_Name", "Track_Done_Count", y_col, "Duration_Ms"]
             if c in plot_df.columns
         ]
         st.dataframe(
             plot_df[cols].sort_values("Track_Done_Count", ascending=False),
             use_container_width=True,
         )
-        df_download_button(
-            plot_df[cols], "Download tracks view (CSV)", "tracks_playcount_duration.csv"
-        )
+        df_download_button(plot_df[cols], "Download tracks view (CSV)", "tracks_playcount_duration.csv")
 
 st.caption(
     "Notes: Interest Score = w_done*Track_Done_Count + w_click*Click_Row_Count - w_skip*Skipped_Count; "

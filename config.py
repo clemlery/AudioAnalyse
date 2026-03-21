@@ -29,6 +29,7 @@ LOG_FORMAT: Final[str] = "%(asctime)s.%(msecs)03d %(message)s"
 DATE_FORMAT: Final[str] = "%H:%M:%S"
 
 # Logger setup
+os.makedirs("./log", exist_ok=True)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 handler = RotatingFileHandler(

@@ -1,0 +1,49 @@
+{% if job.status == "idle" %}
+<div id="job-status"></div>
+
+{% elif job.status == "running" %}
+<div id="job-status"
+     hx-get="/import/status"
+     hx-trigger="every 2s"
+     hx-swap="outerHTML">
+
+    <div class="progress-wrap">
+        <div class="progress-track">
+            <div class="progress-fill {% if job.pct == 0 %}progress-indeterminate{% endif %}"
+                 style="width: {{ [job.pct, 2]|max }}%"></div>
+        </div>
+        <span class="progress-label">{{ job.files_done }} / {{ job.files_total }} files — {{ job.pct }}%</span>
+    </div>
+
+    <p class="progress-message">
+        <span class="spinner"></span> {{ job.message }}
+    </p>
+
+    {% if log_tail %}
+    <pre class="log-tail">{{ log_tail }}</pre>
+    {% endif %}
+</div>
+
+{% elif job.status == "done" %}
+<div id="job-status">
+    <div class="progress-wrap">
+        <div class="progress-track">
+            <div class="progress-fill progress-done" style="width: 100%"></div>
+        </div>
+        <span class="progress-label">{{ job.files_total }} / {{ job.files_total }} files — 100%</span>
+    </div>
+    <p class="msg-success" style="margin-top: 0.75rem">&#10003; {{ job.message }}</p>
+    {% if log_tail %}
+    <pre class="log-tail">{{ log_tail }}</pre>
+    {% endif %}
+</div>
+
+{% elif job.status == "error" %}
+<div id="job-status">
+    <p class="msg-error"><strong>Error:</strong> {{ job.error }}</p>
+    {% if log_tail %}
+    <pre class="log-tail">{{ log_tail }}</pre>
+    {% endif %}
+</div>
+
+{% endif %}

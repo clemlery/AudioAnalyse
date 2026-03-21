@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Import{% endblock %}
+
+{% block content %}
+<div class="import-page">
+    <h1>Import your Spotify streaming history</h1>
+
+    {% if user_id %}
+    <div class="msg-success">
+        Connected as <strong>{{ display_name or user_id }}</strong>
+    </div>
+    <form action="/import/disconnect" method="post" style="margin-top: 0.5rem">
+        <button type="submit" class="btn btn-outline">Disconnect</button>
+    </form>
+    <hr>
+    {% endif %}
+
+    <section>
+        <h2>1) Connect your Spotify account</h2>
+        <p>Click below to authenticate via Spotify OAuth.</p>
+        <a href="{{ auth_url }}" class="btn">Connect to Spotify</a>
+    </section>
+
+    <section>
+        <h2>2) Upload your streaming history files</h2>
+        {% if not user_id %}
+        <p class="warning">Connect your Spotify account above before uploading files.</p>
+        {% else %}
+        <p class="muted">
+            Select one or more <code>Streaming_History_Audio_*.json</code> files
+            as exported by Spotify. Do not rename them.
+        </p>
+        <form hx-post="/import/upload"
+              hx-target="#upload-results"
+              hx-encoding="multipart/form-data"
+              hx-trigger="submit">
+            <input type="file" name="files" accept=".json" multiple>
+            <button type="submit" class="btn">Upload</button>
+        </form>
+        <div id="upload-results" style="margin-top: 1rem"></div>
+
+        <div id="uploads-list" style="margin-top: 1rem">
+            {% if uploads %}
+            <ul>
+                {% for f in uploads %}<li>{{ f }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+        {% endif %}
+    </section>
+
+    {% if user_id %}
+    <section>
+        <h2>3) Start import</h2>
+        {% if uploads %}
+        <p class="muted">{{ uploads | length }} file(s) ready to process.</p>
+        {% else %}
+        <p class="muted">No files uploaded yet. Upload your files above first.</p>
+        {% endif %}
+        <button class="btn"
+                hx-post="/import/process"
+                hx-target="#job-status"
+                hx-swap="outerHTML"
+                {% if not uploads %}disabled{% endif %}>
+            Start import
+        </button>
+
+        <div id="job-status" style="margin-top: 1.5rem"></div>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}

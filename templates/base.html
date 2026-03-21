@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Lyra{% endblock %} — Spotify Analytics</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://unpkg.com/htmx.org@2.0.3" defer></script>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="brand">&#127911; Lyra</a>
+        <div class="nav-links">
+            <a href="/top-items" {% if request.url.path == '/top-items' %}class="active"{% endif %}>Top Items</a>
+            <a href="/scores" {% if request.url.path == '/scores' %}class="active"{% endif %}>Scores</a>
+            <a href="/import" {% if request.url.path == '/import' %}class="active"{% endif %}>Import</a>
+        </div>
+        {% if request.session.get('user_id') %}
+        <span class="user-badge">{{ request.session.get('display_name') or request.session.get('user_id') }}</span>
+        {% endif %}
+    </nav>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>
