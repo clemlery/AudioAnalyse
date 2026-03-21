@@ -1,14 +1,7 @@
 # process.py
 
-<<<<<<< HEAD
-<<<<<<< Updated upstream
-=======
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
->>>>>>> Stashed changes
-=======
-from dataclasses import dataclass, field
->>>>>>> 75432a96411bf01ec632779740c0fa3193805395
 from typing import Any, Dict, Optional, Tuple
 from auth import ConfigAuth
 from constants.service import RELEASE_TYPE
@@ -51,6 +44,7 @@ from streaming_history_analyser.service import (
     verify_token,
 )
 from datetime import date, datetime
+import time
 
 
 @dataclass
@@ -70,19 +64,19 @@ class IngestContext:
 
 def _filter_new_track_ids(records):
     """Return set of Spotify track IDs not in local DB."""
-    ids = set()
+    candidate_ids = set()
     for item in records:
         uri = item.get("spotify_track_uri")
         try:
             _, data_type, tid = uri.split(":")
-            if (
-                data_type == "track"
-                and not SpotifyTrackDAO.get_spotify_track_by_spotify_id(tid)
-            ):
-                ids.add(tid)
+            if data_type == "track":
+                candidate_ids.add(tid)
         except Exception:
             logger.error(f"Invalid URI or error: {uri}")
-    return ids
+    if not candidate_ids:
+        return set()
+    existing = SpotifyTrackDAO.get_existing_spotify_ids(list(candidate_ids))
+    return candidate_ids - existing
 
 
 def _fetch_all_tracks(token, ids, batch_size=50):
@@ -99,7 +93,7 @@ def _fetch_all_tracks(token, ids, batch_size=50):
 def _process_artists(
     new_artists: set[str],
     seen_artists: set[str],
-    artist_scraper: SpotifyArtistScraperDAO,
+    artist_scraper: SpotifyArtistScraperDAO | None,
     token: str,
     batch_size=50,
     max_workers=10,
@@ -109,16 +103,17 @@ def _process_artists(
     for chunk in chunk_list(list(new_artists), batch_size):
         all_artists.extend(ArtistFetchDAO.fetch_artists(token, chunk))
 
-    # Parallelize scraping HTTP calls
+    # Parallelize scraping HTTP calls (skipped when artist_scraper is None)
     monthly_listeners_map: dict[str, int | None] = {}
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futures = {
-            executor.submit(artist_scraper.get_artist_monthly_listeners, art.id): art
-            for art in all_artists
-        }
-        for future in as_completed(futures):
-            art = futures[future]
-            monthly_listeners_map[art.id] = future.result()
+    if artist_scraper is not None:
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = {
+                executor.submit(artist_scraper.get_artist_monthly_listeners, art.id): art
+                for art in all_artists
+            }
+            for future in as_completed(futures):
+                art = futures[future]
+                monthly_listeners_map[art.id] = future.result()
 
     # Sequential DB writes
     for art in all_artists:
@@ -150,20 +145,21 @@ def _process_releases(
 
 def _process_tracks(
     tracks: list[Track],
-    track_scraper: SpotifyTrackScraperDAO,
+    track_scraper: SpotifyTrackScraperDAO | None,
     seen_spotify_tracks: set[str],
     max_workers=10,
 ):
-    # Parallelize scraping HTTP calls
+    # Parallelize scraping HTTP calls (skipped when track_scraper is None)
     playcount_map: dict[str, int | None] = {}
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futures = {
-            executor.submit(track_scraper.get_track_playcount, t.id): t
-            for t in tracks
-        }
-        for future in as_completed(futures):
-            t = futures[future]
-            playcount_map[t.id] = future.result()
+    if track_scraper is not None:
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = {
+                executor.submit(track_scraper.get_track_playcount, t.id): t
+                for t in tracks
+            }
+            for future in as_completed(futures):
+                t = futures[future]
+                playcount_map[t.id] = future.result()
 
     # Sequential DB writes
     for t in tracks:
@@ -308,36 +304,30 @@ def _persist_stream_day(track_id: int, user_id: int, meta: dict) -> None:
 # ----------------------- Refactored main function -----------------------
 
 
-<<<<<<< HEAD
-<<<<<<< Updated upstream
-def _process_stream_batch(records, user_id):
-    """Insert or update stream records from a history batch (refactored)."""
-    global last_track_played, last_date, current_loop_streak, current_loop_streak_day
+def _process_stream_batch(records, ctx: IngestContext):
+    """Insert or update stream records from a history batch."""
+    # Pre-build the full spotify_id → Track cache with two bulk queries
+    all_spotify_ids = set()
+    for raw in records:
+        uri = raw.get("spotify_track_uri")
+        if uri:
+            parts = uri.split(":")
+            if len(parts) == 3 and parts[1] == "track":
+                all_spotify_ids.add(parts[2])
 
-=======
-def _process_stream_batch(records, ctx: IngestContext):
-    """Insert or update stream records from a history batch."""
-    cache: dict = {}
->>>>>>> Stashed changes
-=======
-def _process_stream_batch(records, ctx: IngestContext):
-    """Insert or update stream records from a history batch."""
->>>>>>> 75432a96411bf01ec632779740c0fa3193805395
+    sp_map = SpotifyTrackDAO.get_spotify_tracks_bulk(list(all_spotify_ids))
+    track_obj_map = TrackDAO.get_tracks_by_ids([sp.track_id for sp in sp_map.values()])
+    cache: dict = {
+        spotify_id: track_obj_map.get(sp.track_id)
+        for spotify_id, sp in sp_map.items()
+    }
+
     for raw in records:
         rec = _parse_record(raw)
         if rec is None:
             continue
-<<<<<<< HEAD
-<<<<<<< Updated upstream
-        # Resolve track
-=======
-
->>>>>>> 75432a96411bf01ec632779740c0fa3193805395
-        track = _resolve_track_obj(rec["id"])
-=======
 
         track = _resolve_track_obj(rec["id"], cache)
->>>>>>> Stashed changes
         if track is None:
             logger.warning(
                 f"Unknown Spotify track in DB for ID={rec['id']!r}, name={rec['name']!r}"
@@ -369,12 +359,16 @@ def exploit_streaming_history(
     streaming_history: list[dict],
     ctx: IngestContext,
     scraper_factory: ScraperFactory | None = None,
-):
-    if scraper_factory is None:
-        scraper_factory = ScraperFactory(BrowserTokenSource())
-
-    artist_scraper = scraper_factory.artist()
-    track_scraper = scraper_factory.track()
+    scrape: bool = True,
+) -> dict[str, float]:
+    if scrape:
+        if scraper_factory is None:
+            scraper_factory = ScraperFactory(BrowserTokenSource())
+        artist_scraper = scraper_factory.artist()
+        track_scraper = scraper_factory.track()
+    else:
+        artist_scraper = None
+        track_scraper = None
 
     new_auth = ConfigAuth()
     token = new_auth.access_token
@@ -387,10 +381,17 @@ def exploit_streaming_history(
     seen_artists: set[str] = set()
     seen_releases: set[str] = set()
     seen_spotify_tracks: set[str] = set()
+    timings: dict[str, float] = {}
 
+    t0 = time.perf_counter()
     track_ids = _filter_new_track_ids(streaming_history)
+    timings["filter_new_track_ids"] = time.perf_counter() - t0
+
     if track_ids:
+        t0 = time.perf_counter()
         tracks = _fetch_all_tracks(token, track_ids)
+        timings["fetch_all_tracks"] = time.perf_counter() - t0
+
         new_releases = {
             t.album.id
             for t in tracks
@@ -404,13 +405,35 @@ def exploit_streaming_history(
             if a.id not in seen_artists and not ArtistDAO.get_artist_by_spotify_id(a.id)
         }
 
+        t0 = time.perf_counter()
         _process_artists(new_artists, seen_artists, artist_scraper, token)
-        _process_releases(new_releases, seen_releases, token)
-        _process_tracks(tracks, track_scraper, seen_spotify_tracks)
-        _associate_rows(tracks)
+        timings["process_artists"] = time.perf_counter() - t0
 
+        t0 = time.perf_counter()
+        _process_releases(new_releases, seen_releases, token)
+        timings["process_releases"] = time.perf_counter() - t0
+
+        t0 = time.perf_counter()
+        _process_tracks(tracks, track_scraper, seen_spotify_tracks)
+        timings["process_tracks"] = time.perf_counter() - t0
+
+        t0 = time.perf_counter()
+        _associate_rows(tracks)
+        timings["associate_rows"] = time.perf_counter() - t0
+
+    t0 = time.perf_counter()
     _process_stream_batch(streaming_history, ctx)
+    timings["process_stream_batch"] = time.perf_counter() - t0
+
+    t0 = time.perf_counter()
     session.commit()
     session.expunge_all()
+    timings["db_commit"] = time.perf_counter() - t0
 
-    logger.info("Algorithm completed successfully")
+    total = sum(timings.values())
+    logger.info("Algorithm completed successfully — timings:")
+    for phase, elapsed in timings.items():
+        logger.info(f"  {phase:<30} {elapsed:6.2f}s  ({elapsed/total*100:.1f}%)")
+    logger.info(f"  {'TOTAL':<30} {total:6.2f}s")
+
+    return timings

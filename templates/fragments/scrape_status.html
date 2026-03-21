@@ -1,0 +1,68 @@
+{% if job.status == "idle" %}
+<div id="scrape-status"></div>
+
+{% elif job.status == "running" %}
+<div id="scrape-status"
+     hx-get="/import/scrape/status"
+     hx-trigger="every 2s"
+     hx-swap="outerHTML">
+
+    {% if job.files_total > 0 %}
+    <div class="progress-wrap">
+        <div class="progress-track">
+            <div class="progress-fill {% if job.pct == 0 %}progress-indeterminate{% endif %}"
+                 style="width: {{ [job.pct, 2]|max }}%"></div>
+        </div>
+        <span class="progress-label">{{ job.files_done }} / {{ job.files_total }} — {{ job.pct }}%</span>
+    </div>
+    {% else %}
+    <div class="progress-wrap">
+        <div class="progress-track">
+            <div class="progress-fill progress-indeterminate" style="width: 100%"></div>
+        </div>
+    </div>
+    {% endif %}
+
+    <p class="progress-message">
+        <span class="spinner"></span> {{ job.message }}
+    </p>
+</div>
+
+{% elif job.status == "done" %}
+<div id="scrape-status">
+    <p class="msg-success" style="margin-top: 0.75rem">&#10003; {{ job.message }}</p>
+
+    {% if job.timings %}
+    <table style="margin-top: 0.75rem; border-collapse: collapse; font-size: 0.85rem; width: 100%">
+        <thead>
+            <tr>
+                <th style="text-align: left; padding: 0.25rem 0.75rem 0.25rem 0">Phase</th>
+                <th style="text-align: right; padding: 0.25rem 0.75rem">Time (s)</th>
+                <th style="text-align: right; padding: 0.25rem 0">Share</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% set total = job.timings.values() | sum %}
+            {% for phase, elapsed in job.timings.items() %}
+            <tr>
+                <td style="padding: 0.2rem 0.75rem 0.2rem 0">{{ phase }}</td>
+                <td style="text-align: right; padding: 0.2rem 0.75rem">{{ "%.2f"|format(elapsed) }}</td>
+                <td style="text-align: right; padding: 0.2rem 0">{{ "%.1f"|format(elapsed / total * 100) }}%</td>
+            </tr>
+            {% endfor %}
+            <tr style="font-weight: 600; border-top: 1px solid #ccc">
+                <td style="padding: 0.3rem 0.75rem 0 0">TOTAL</td>
+                <td style="text-align: right; padding: 0.3rem 0.75rem 0">{{ "%.2f"|format(total) }}</td>
+                <td style="text-align: right; padding: 0.3rem 0 0">100%</td>
+            </tr>
+        </tbody>
+    </table>
+    {% endif %}
+</div>
+
+{% elif job.status == "error" %}
+<div id="scrape-status">
+    <p class="msg-error"><strong>Error:</strong> {{ job.error }}</p>
+</div>
+
+{% endif %}

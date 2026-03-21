@@ -11,6 +11,7 @@ class JobState:
     current_file: str = ""
     message: str = ""
     error: str = ""
+    timings: dict = field(default_factory=dict)  # {filename: {phase: seconds}}
 
     @property
     def pct(self) -> int:
@@ -21,3 +22,6 @@ class JobState:
 
 job = JobState()
 lock = Lock()
+
+scrape_job = JobState()
+scrape_lock = Lock()

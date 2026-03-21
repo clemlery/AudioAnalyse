@@ -52,20 +52,40 @@
     {% if user_id %}
     <section>
         <h2>3) Start import</h2>
-        {% if uploads %}
-        <p class="muted">{{ uploads | length }} file(s) ready to process.</p>
-        {% else %}
+        {% if not uploads %}
         <p class="muted">No files uploaded yet. Upload your files above first.</p>
+        {% else %}
+        <form hx-post="/import/process"
+              hx-target="#job-status"
+              hx-swap="outerHTML">
+            <p class="muted">Select the files to import:</p>
+            <div style="display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem">
+                {% for f in uploads %}
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer">
+                    <input type="checkbox" name="filenames" value="{{ f }}"> {{ f }}
+                </label>
+                {% endfor %}
+            </div>
+            <button type="submit" class="btn">Start import</button>
+        </form>
         {% endif %}
-        <button class="btn"
-                hx-post="/import/process"
-                hx-target="#job-status"
-                hx-swap="outerHTML"
-                {% if not uploads %}disabled{% endif %}>
-            Start import
-        </button>
 
         <div id="job-status" style="margin-top: 1.5rem"></div>
+    </section>
+
+    <section>
+        <h2>4) Update metrics</h2>
+        <p class="muted">
+            Scrape monthly listeners and playcounts for all artists and tracks
+            that don't have a metrics snapshot yet. Run this after importing all your files.
+        </p>
+        <button class="btn"
+                hx-post="/import/scrape"
+                hx-target="#scrape-status"
+                hx-swap="outerHTML">
+            Update metrics
+        </button>
+        <div id="scrape-status" style="margin-top: 1.5rem"></div>
     </section>
     {% endif %}
 </div>

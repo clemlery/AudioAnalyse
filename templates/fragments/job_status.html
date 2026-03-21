@@ -33,6 +33,41 @@
         <span class="progress-label">{{ job.files_total }} / {{ job.files_total }} files — 100%</span>
     </div>
     <p class="msg-success" style="margin-top: 0.75rem">&#10003; {{ job.message }}</p>
+
+    {% if job.timings %}
+    <div style="margin-top: 1.25rem">
+        {% for filename, phases in job.timings.items() %}
+        <details open style="margin-bottom: 1rem">
+            <summary style="cursor: pointer; font-weight: 600">{{ filename }}</summary>
+            <table style="margin-top: 0.5rem; border-collapse: collapse; font-size: 0.85rem; width: 100%">
+                <thead>
+                    <tr>
+                        <th style="text-align: left; padding: 0.25rem 0.75rem 0.25rem 0">Phase</th>
+                        <th style="text-align: right; padding: 0.25rem 0.75rem">Time (s)</th>
+                        <th style="text-align: right; padding: 0.25rem 0">Share</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set total = phases.values() | sum %}
+                    {% for phase, elapsed in phases.items() %}
+                    <tr>
+                        <td style="padding: 0.2rem 0.75rem 0.2rem 0">{{ phase }}</td>
+                        <td style="text-align: right; padding: 0.2rem 0.75rem">{{ "%.2f"|format(elapsed) }}</td>
+                        <td style="text-align: right; padding: 0.2rem 0">{{ "%.1f"|format(elapsed / total * 100) }}%</td>
+                    </tr>
+                    {% endfor %}
+                    <tr style="font-weight: 600; border-top: 1px solid #ccc">
+                        <td style="padding: 0.3rem 0.75rem 0 0">TOTAL</td>
+                        <td style="text-align: right; padding: 0.3rem 0.75rem 0">{{ "%.2f"|format(total) }}</td>
+                        <td style="text-align: right; padding: 0.3rem 0 0">100%</td>
+                    </tr>
+                </tbody>
+            </table>
+        </details>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     {% if log_tail %}
     <pre class="log-tail">{{ log_tail }}</pre>
     {% endif %}

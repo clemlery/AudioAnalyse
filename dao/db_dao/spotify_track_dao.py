@@ -1,7 +1,7 @@
 from dao.base_dao import BaseDbDAO
 from config import session
 from models.sql_alchemy_models.spotify_track_sql_model import SpotifyTrack
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 
 class SpotifyTrackDAO(BaseDbDAO):
@@ -29,6 +29,26 @@ class SpotifyTrackDAO(BaseDbDAO):
     @staticmethod
     def get_spotify_track_by_spotify_id(spotify_id: str) -> Optional[SpotifyTrack]:
         return session.query(SpotifyTrack).filter_by(spotify_id=spotify_id).first()
+
+    @staticmethod
+    def get_existing_spotify_ids(ids: List[str]) -> set:
+        """Return the subset of ids that already exist in the DB (single IN query)."""
+        if not ids:
+            return set()
+        rows = session.query(SpotifyTrack.spotify_id).filter(
+            SpotifyTrack.spotify_id.in_(ids)
+        ).all()
+        return {row[0] for row in rows}
+
+    @staticmethod
+    def get_spotify_tracks_bulk(ids: List[str]) -> Dict[str, SpotifyTrack]:
+        """Return a dict {spotify_id: SpotifyTrack} for all given ids (single IN query)."""
+        if not ids:
+            return {}
+        rows = session.query(SpotifyTrack).filter(
+            SpotifyTrack.spotify_id.in_(ids)
+        ).all()
+        return {row.spotify_id: row for row in rows}
 
     @staticmethod
     def delete_track(track_id: str) -> None:

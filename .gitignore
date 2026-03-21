@@ -19,5 +19,6 @@ uploads/
 
 # Exclude the .env file from version control
 .env
+CLAUDE.md
 
 

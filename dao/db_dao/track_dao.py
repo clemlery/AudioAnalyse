@@ -4,7 +4,7 @@ from models.sql_alchemy_models.track_sql_model import Track
 from models.sql_alchemy_models.artist_sql_model import Artist
 from models.sql_alchemy_models.spotify_track_sql_model import SpotifyTrack
 from models.sql_alchemy_models.release_sql_model import Release
-from typing import List, Optional
+from typing import Dict, List, Optional
 from models.sql_alchemy_models.association import track_artist
 from operator import and_
 
@@ -40,6 +40,14 @@ class TrackDAO(BaseDbDAO):
             .filter(and_(Track.name == track_name, Track.duration_ms == track_duration))
             .first()
         )
+
+    @staticmethod
+    def get_tracks_by_ids(ids: List[int]) -> Dict[int, "Track"]:
+        """Return a dict {track_id: Track} for all given ids (single IN query)."""
+        if not ids:
+            return {}
+        rows = session.query(Track).filter(Track.id.in_(ids)).all()
+        return {row.id: row for row in rows}
 
     @staticmethod
     def get_tracks_by_name_artist_name(name: str, artist_name: str) -> List[Track]:

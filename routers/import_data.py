@@ -5,13 +5,13 @@ import urllib.parse
 from typing import List
 
 import requests
-from fastapi import APIRouter, File, Request, UploadFile
+from fastapi import APIRouter, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from constants.api import AUTH_URL, CLIENT_ID, CLIENT_SECRET, SCOPES, TOKEN_URL
 from constants.service import UPLOADS_PATH
-from routers.job import job, lock
+from routers.job import job, lock, scrape_job, scrape_lock
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -76,11 +76,14 @@ def _run_ingestion(user_id: str, filenames: list[str]) -> None:
                 job.message = f"Processing {filename}…"
 
             streaming_history = load_streaming_history_file(filename)
-            exploit_streaming_history(streaming_history, ctx, scraper_factory)
+            file_timings = exploit_streaming_history(
+                streaming_history, ctx, scraper_factory, scrape=False
+            )
 
             with lock:
                 job.files_done += 1
                 job.message = f"Done: {filename}"
+                job.timings[filename] = file_timings
 
         with lock:
             job.status = "done"
@@ -185,7 +188,7 @@ def _render_uploads_list(uploads: list[str]) -> str:
 
 
 @router.post("/import/process", response_class=HTMLResponse)
-def start_process(request: Request):
+def start_process(request: Request, filenames: List[str] = Form(default=[])):
     user_id = request.session.get("user_id")
     if not user_id:
         return HTMLResponse('<p class="warning">Not connected.</p>')
@@ -194,9 +197,8 @@ def start_process(request: Request):
         if job.status == "running":
             return _status_fragment(request)
 
-        filenames = _list_uploads()
         if not filenames:
-            return HTMLResponse('<p class="msg-error">No files found in uploads folder.</p>')
+            return HTMLResponse('<p class="msg-error">No files selected.</p>')
 
         job.status = "running"
         job.files_total = len(filenames)
@@ -204,6 +206,7 @@ def start_process(request: Request):
         job.current_file = ""
         job.message = "Starting…"
         job.error = ""
+        job.timings = {}
 
     thread = threading.Thread(
         target=_run_ingestion, args=(user_id, filenames), daemon=True
@@ -216,3 +219,68 @@ def start_process(request: Request):
 @router.get("/import/status", response_class=HTMLResponse)
 def get_status(request: Request):
     return _status_fragment(request)
+
+
+# ── Scraping job ──────────────────────────────────────────────────────────────
+
+def _scrape_status_fragment(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(
+        "fragments/scrape_status.html",
+        {"request": request, "job": scrape_job},
+    )
+
+
+def _run_scraping() -> None:
+    from streaming_history_analyser.scrape import run_metrics_scraping
+    from streaming_history_analyser.factory import BrowserTokenSource, ScraperFactory
+
+    try:
+        scraper_factory = ScraperFactory(BrowserTokenSource())
+
+        def _progress(message: str, done: int, total: int) -> None:
+            with scrape_lock:
+                scrape_job.message = message
+                scrape_job.files_done = done
+                scrape_job.files_total = total
+
+        timings = run_metrics_scraping(
+            scraper_factory=scraper_factory,
+            progress_callback=_progress,
+        )
+
+        with scrape_lock:
+            scrape_job.status = "done"
+            scrape_job.message = "Metrics update complete."
+            scrape_job.timings = timings
+
+    except Exception as exc:
+        with scrape_lock:
+            scrape_job.status = "error"
+            scrape_job.error = str(exc)
+
+
+@router.post("/import/scrape", response_class=HTMLResponse)
+def start_scrape(request: Request):
+    if not request.session.get("user_id"):
+        return HTMLResponse('<p class="warning">Not connected.</p>')
+
+    with scrape_lock:
+        if scrape_job.status == "running":
+            return _scrape_status_fragment(request)
+
+        scrape_job.status = "running"
+        scrape_job.files_done = 0
+        scrape_job.files_total = 0
+        scrape_job.message = "Starting…"
+        scrape_job.error = ""
+        scrape_job.timings = {}
+
+    thread = threading.Thread(target=_run_scraping, daemon=True)
+    thread.start()
+
+    return _scrape_status_fragment(request)
+
+
+@router.get("/import/scrape/status", response_class=HTMLResponse)
+def get_scrape_status(request: Request):
+    return _scrape_status_fragment(request)
