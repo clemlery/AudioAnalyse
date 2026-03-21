@@ -1,5 +1,10 @@
 # process.py
 
+<<<<<<< Updated upstream
+=======
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass, field
+>>>>>>> Stashed changes
 from typing import Any, Dict, Optional, Tuple
 from auth import ConfigAuth
 from constants.service import RELEASE_TYPE, UPLOADS_PATH
@@ -84,17 +89,31 @@ def _process_artists(
     artist_scraper: SpotifyArtistScraperDAO,
     token: str,
     batch_size=50,
+    max_workers=10,
 ):
-    # Fetch missing artist data
+    # Fetch all artist data from Spotify API
+    all_artists = []
     for chunk in chunk_list(list(new_artists), batch_size):
-        artists = ArtistFetchDAO.fetch_artists(token, chunk)
-        for art in artists:
-            artist_obj = ArtistDAO.add_artist(art)
-            monthly_listeners = artist_scraper.get_artist_monthly_listeners(art.id)
-            ArtistMetricsSnapshotDAO.add_artist_metrics(
-                artist_obj.id, monthly_listeners
-            )
-            seen_artists.add(art.id)
+        all_artists.extend(ArtistFetchDAO.fetch_artists(token, chunk))
+
+    # Parallelize scraping HTTP calls
+    monthly_listeners_map: dict[str, int | None] = {}
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = {
+            executor.submit(artist_scraper.get_artist_monthly_listeners, art.id): art
+            for art in all_artists
+        }
+        for future in as_completed(futures):
+            art = futures[future]
+            monthly_listeners_map[art.id] = future.result()
+
+    # Sequential DB writes
+    for art in all_artists:
+        artist_obj = ArtistDAO.add_artist(art)
+        ArtistMetricsSnapshotDAO.add_artist_metrics(
+            artist_obj.id, monthly_listeners_map.get(art.id)
+        )
+        seen_artists.add(art.id)
 
 
 def _process_releases(
@@ -120,15 +139,27 @@ def _process_tracks(
     tracks: list[Track],
     track_scraper: SpotifyTrackScraperDAO,
     seen_spotify_tracks: set[str],
+    max_workers=10,
 ):
+    # Parallelize scraping HTTP calls
+    playcount_map: dict[str, int | None] = {}
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = {
+            executor.submit(track_scraper.get_track_playcount, t.id): t
+            for t in tracks
+        }
+        for future in as_completed(futures):
+            t = futures[future]
+            playcount_map[t.id] = future.result()
+
+    # Sequential DB writes
     for t in tracks:
         seen_spotify_tracks.add(t.id)
         track_obj = TrackDAO.get_track_by_nd(
             t.name, t.duration_ms
         ) or TrackDAO.add_track(t)
 
-        playcount = track_scraper.get_track_playcount(t.id)
-        TrackMetricsSnapshotDAO.add_track_metrics(track_obj.id, playcount)
+        TrackMetricsSnapshotDAO.add_track_metrics(track_obj.id, playcount_map.get(t.id))
 
         if not SpotifyTrackDAO.get_spotify_track_by_spotify_id(t.id):
             SpotifyTrackDAO.add_spotify_track(
@@ -198,12 +229,15 @@ def _parse_datetime(value: str) -> Optional[datetime]:
         return None
 
 
-def _resolve_track_obj(track_id: str):
+def _resolve_track_obj(track_id: str, cache: dict | None = None):
     """Resolve DB Track object from a record's Spotify URI via SpotifyTrackDAO -> TrackDAO."""
+    if cache is not None and track_id in cache:
+        return cache[track_id]
     sp = SpotifyTrackDAO.get_spotify_track_by_spotify_id(track_id)
-    if not sp:
-        return None
-    return TrackDAO.get_track_by_id(sp.track_id)
+    result = TrackDAO.get_track_by_id(sp.track_id) if sp else None
+    if cache is not None:
+        cache[track_id] = result
+    return result
 
 
 def _update_loop_streaks(
@@ -262,16 +296,27 @@ def _persist_stream_day(track_id: int, user_id: int, meta: dict) -> None:
 # ----------------------- Refactored main function -----------------------
 
 
+<<<<<<< Updated upstream
 def _process_stream_batch(records, user_id):
     """Insert or update stream records from a history batch (refactored)."""
     global last_track_played, last_date, current_loop_streak, current_loop_streak_day
 
+=======
+def _process_stream_batch(records, ctx: IngestContext):
+    """Insert or update stream records from a history batch."""
+    cache: dict = {}
+>>>>>>> Stashed changes
     for raw in records:
         rec = _parse_record(raw)
         if rec == None:
             continue
+<<<<<<< Updated upstream
         # Resolve track
         track = _resolve_track_obj(rec["id"])
+=======
+
+        track = _resolve_track_obj(rec["id"], cache)
+>>>>>>> Stashed changes
         if track is None:
             logger.warning(
                 f"Unknown Spotify track in DB for ID={rec['id']!r}, name={rec['name']!r}"

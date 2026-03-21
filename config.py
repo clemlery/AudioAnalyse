@@ -12,9 +12,10 @@ load_dotenv()
 uid = os.getenv("UID")
 pwd = os.getenv("PASSWORD")
 server = os.getenv("SERVER")
+port = os.getenv("PORT")
 databse = os.getenv("DATABASE")
 
-engine = create_engine(f"postgresql://{uid}:{pwd}@{server}:5432/{databse}")
+engine = create_engine(f"postgresql://{uid}:{pwd}@{server}:{port}/{databse}")
 Base.metadata.create_all(bind=engine)
 Session = sessionmaker(bind=engine)
 
