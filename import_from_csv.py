@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-import_from_csv.py — Import tracks/albums/artists from CSV into the database.
+import_from_csv.py — Import tracks/albums/artists from SQLite dataset into the database.
 
 Usage:
-    python import_from_csv.py [csv_path] [limit]
+    python import_from_csv.py [sqlite_path] [limit]
 
 Examples:
-    python import_from_csv.py                              # full import
-    python import_from_csv.py data/dataset/dataset.csv     # explicit path
-    python import_from_csv.py data/dataset/dataset.csv 500 # limit to 500 tracks
+    python import_from_csv.py                                        # full import
+    python import_from_csv.py data/dataset/extracted.sqlite          # explicit path
+    python import_from_csv.py data/dataset/extracted.sqlite 500      # limit to 500 tracks
 """
 
 import sys
@@ -23,17 +23,17 @@ from models.sql_alchemy_models.track_stream_day_sql_model import TrackStreamDay
 from models.sql_alchemy_models.metrics import ArtistMetricsSnapshot, TrackMetricsSnapshot
 from models.sql_alchemy_models.user_sql_model import User
 
-from streaming_history_analyser.dataset_importer import CsvDatasetImporter
+from streaming_history_analyser.dataset_importer import SqliteDatasetImporter
 
 if __name__ == "__main__":
-    csv_path = sys.argv[1] if len(sys.argv) > 1 else "data/dataset/dataset.csv"
+    sqlite_path = sys.argv[1] if len(sys.argv) > 1 else "data/dataset/extracted.sqlite"
     limit = int(sys.argv[2]) if len(sys.argv) > 2 else None
 
-    print(f"CSV : {csv_path}")
+    print(f"SQLite : {sqlite_path}")
     if limit:
-        print(f"Limit : {limit} tracks")
+        print(f"Limit  : {limit} tracks")
 
-    importer = CsvDatasetImporter(csv_path)
+    importer = SqliteDatasetImporter(sqlite_path)
     stats = importer.import_dataset(limit=limit)
 
     print("\n" + "=" * 60)
