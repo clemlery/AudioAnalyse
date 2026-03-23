@@ -8,9 +8,9 @@ from typing import Any, Dict, List, Set
 
 from pydantic import ValidationError
 
-from models.data_class_models.album import Album
-from models.data_class_models.tracks import Tracks
-from models.data_class_models.albums import Albums
+from models.pydantic.album import Album
+from models.pydantic.tracks import Tracks
+from models.pydantic.albums import Albums
 
 from dao.base_dao import BaseFetchDAO
 

@@ -4,12 +4,12 @@ import sqlite3
 import time
 from typing import Optional
 
-from config import session, logger
-from models.sql_alchemy_models.artist_sql_model import Artist
-from models.sql_alchemy_models.release_sql_model import Release
-from models.sql_alchemy_models.spotify_track_sql_model import SpotifyTrack
-from models.sql_alchemy_models.track_sql_model import Track
-from models.sql_alchemy_models.association import release_artist, track_artist
+from core.config import session, logger
+from models.orm.artist_sql_model import Artist
+from models.orm.release_sql_model import Release
+from models.orm.spotify_track_sql_model import SpotifyTrack
+from models.orm.track_sql_model import Track
+from models.orm.association import release_artist, track_artist
 
 
 COMMIT_EVERY = 2000

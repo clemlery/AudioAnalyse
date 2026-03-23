@@ -4,8 +4,8 @@ refresh_token_in_db.py — Get fresh Spotify token via browser and save to DB
 """
 
 import psycopg2
-from streaming_history_analyser.factory import BrowserTokenSource
-from config import logger
+from pipeline.factory import BrowserTokenSource
+from core.config import logger
 
 if __name__ == "__main__":
     print("[*] Generating fresh Spotify token via browser...")

@@ -1,8 +1,8 @@
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy import ForeignKey, Column, Sequence, String, Integer
 from sqlalchemy.orm import relationship
-from models.sql_alchemy_models.base import Base
-from models.sql_alchemy_models.association import track_artist
+from models.orm.base import Base
+from models.orm.association import track_artist
 
 track_id_seq = Sequence("track_id_seq", start=0, increment=1, metadata=Base.metadata)
 

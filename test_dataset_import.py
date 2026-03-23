@@ -12,13 +12,13 @@ Example:
 import sys
 
 # Force import of all models before using session
-from models.sql_alchemy_models.track_sql_model import Track
-from models.sql_alchemy_models.artist_sql_model import Artist
-from models.sql_alchemy_models.release_sql_model import Release
-from models.sql_alchemy_models.spotify_track_sql_model import SpotifyTrack
-from models.sql_alchemy_models.track_stream_sql_model import TrackStream
+from models.orm.track_sql_model import Track
+from models.orm.artist_sql_model import Artist
+from models.orm.release_sql_model import Release
+from models.orm.spotify_track_sql_model import SpotifyTrack
+from models.orm.track_stream_sql_model import TrackStream
 
-from streaming_history_analyser.dataset_importer import DatasetImporter
+from pipeline.dataset_importer import DatasetImporter
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

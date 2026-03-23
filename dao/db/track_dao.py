@@ -1,11 +1,11 @@
 from dao.base_dao import BaseDbDAO
-from config import session
-from models.sql_alchemy_models.track_sql_model import Track
-from models.sql_alchemy_models.artist_sql_model import Artist
-from models.sql_alchemy_models.spotify_track_sql_model import SpotifyTrack
-from models.sql_alchemy_models.release_sql_model import Release
+from core.config import session
+from models.orm.track_sql_model import Track
+from models.orm.artist_sql_model import Artist
+from models.orm.spotify_track_sql_model import SpotifyTrack
+from models.orm.release_sql_model import Release
 from typing import Dict, List, Optional
-from models.sql_alchemy_models.association import track_artist
+from models.orm.association import track_artist
 from operator import and_
 
 

@@ -8,10 +8,10 @@ from dao.base_dao import BaseFetchDAO
 
 from pydantic import ValidationError
 
-from models.data_class_models.recently_played_tracks import RecentlyPlayedTracks
-from models.data_class_models.track import Track
-from models.data_class_models.playlist_track import PlaylistTrack
-from models.data_class_models.tracks import Tracks
+from models.pydantic.recently_played_tracks import RecentlyPlayedTracks
+from models.pydantic.track import Track
+from models.pydantic.playlist_track import PlaylistTrack
+from models.pydantic.tracks import Tracks
 from typing import Any, Dict, List, Optional, Set
 
 from constants.api import (

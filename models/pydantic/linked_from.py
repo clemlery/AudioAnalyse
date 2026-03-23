@@ -1,8 +1,8 @@
 # models/linked_from.py
 from pydantic import BaseModel, HttpUrl, constr
 from typing import Literal
-from models.data_class_models.external_urls import ExternalUrls
-from models.data_class_models.spotify_id import SpotifyID
+from models.pydantic.external_urls import ExternalUrls
+from models.pydantic.spotify_id import SpotifyID
 
 
 class LinkedFrom(BaseModel):

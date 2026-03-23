@@ -1,6 +1,6 @@
 from sqlalchemy.orm import relationship
 from sqlalchemy import ForeignKey, Column, Index, String, Integer, DateTime
-from models.sql_alchemy_models.base import Base
+from models.orm.base import Base
 
 
 class TrackStream(Base):

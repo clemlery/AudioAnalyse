@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from models.sql_alchemy_models.base import Base
+from models.orm.base import Base
 import logging
 from logging.handlers import RotatingFileHandler
 from typing import Final

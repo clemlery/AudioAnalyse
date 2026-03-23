@@ -1,8 +1,8 @@
 from dao.base_dao import BaseDbDAO
-from config import session
-from models.sql_alchemy_models.artist_sql_model import Artist
-from models.sql_alchemy_models.track_sql_model import Track
-from models.sql_alchemy_models.track_stream_sql_model import TrackStream
+from core.config import session
+from models.orm.artist_sql_model import Artist
+from models.orm.track_sql_model import Track
+from models.orm.track_stream_sql_model import TrackStream
 from typing import Optional, List
 from datetime import datetime, timedelta
 from enum import Enum

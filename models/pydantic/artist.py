@@ -1,9 +1,9 @@
 # models/artist.py
 from pydantic import conint
-from models.data_class_models.simplified_artist import SimplifiedArtist
+from models.pydantic.simplified_artist import SimplifiedArtist
 from typing import List
-from models.data_class_models.followers import Followers
-from models.data_class_models.image import Image
+from models.pydantic.followers import Followers
+from models.pydantic.image import Image
 
 
 class Artist(SimplifiedArtist):

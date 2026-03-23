@@ -1,9 +1,9 @@
 # models/albums.py
 from typing import Union, List
-from models.data_class_models.paginated_response import PaginatedResponse
-from models.data_class_models.album import Album
-from models.data_class_models.simplified_album import SimplifiedAlbum
-from models.data_class_models.saved_album import SavedAlbum
+from models.pydantic.paginated_response import PaginatedResponse
+from models.pydantic.album import Album
+from models.pydantic.simplified_album import SimplifiedAlbum
+from models.pydantic.saved_album import SavedAlbum
 
 
 class Albums(PaginatedResponse):

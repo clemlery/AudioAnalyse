@@ -1,5 +1,5 @@
 # models/owner.py
-from models.data_class_models.linked_from import LinkedFromUser
+from models.pydantic.linked_from import LinkedFromUser
 from typing import Optional
 
 

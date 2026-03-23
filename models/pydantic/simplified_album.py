@@ -2,11 +2,11 @@
 from typing import Literal
 import re
 from pydantic import BaseModel, conlist, constr, conint, HttpUrl, model_validator
-from models.data_class_models.external_urls import ExternalUrls
-from models.data_class_models.image import Image
-from models.data_class_models.simplified_artist import SimplifiedArtist
-from models.data_class_models.spotify_id import SpotifyID
-from models.data_class_models.available_markets import AvailableMarkets
+from models.pydantic.external_urls import ExternalUrls
+from models.pydantic.image import Image
+from models.pydantic.simplified_artist import SimplifiedArtist
+from models.pydantic.spotify_id import SpotifyID
+from models.pydantic.available_markets import AvailableMarkets
 
 
 class SimplifiedAlbum(BaseModel):

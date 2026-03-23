@@ -16,11 +16,11 @@ from constants.service import (
 )
 from datetime import datetime, timedelta, timezone
 from typing import Tuple
-from dao.db_dao.user_dao import UserDAO
-from auth import ConfigAuth
+from dao.db.user_dao import UserDAO
+from core.auth import ConfigAuth
 from dao.service import BrowserManager, get_tokens
-from dao.scrap_dao.spotify_artist_scraper_dao import SpotifyArtistScraperDAO
-from dao.scrap_dao.spotify_track_scraper_dao import SpotifyTrackScraperDAO
+from dao.scrape.spotify_artist_scraper_dao import SpotifyArtistScraperDAO
+from dao.scrape.spotify_track_scraper_dao import SpotifyTrackScraperDAO
 
 
 def chunk_list(lst, size):

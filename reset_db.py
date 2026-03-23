@@ -4,7 +4,7 @@ Deletion order respects foreign key constraints.
 """
 
 from sqlalchemy import text
-from config import session
+from core.config import session
 
 TABLES_TO_DELETE = [
     "track_metrics_snapshot",

@@ -1,10 +1,10 @@
 from pydantic import BaseModel, constr, HttpUrl
 from typing import Literal, List
-from models.data_class_models.explicit_content import ExplicitContent
-from models.data_class_models.spotify_id import SpotifyID
-from models.data_class_models.image import Image
-from models.data_class_models.followers import Followers
-from models.data_class_models.external_urls import ExternalUrls
+from models.pydantic.explicit_content import ExplicitContent
+from models.pydantic.spotify_id import SpotifyID
+from models.pydantic.image import Image
+from models.pydantic.followers import Followers
+from models.pydantic.external_urls import ExternalUrls
 
 
 class User(BaseModel):

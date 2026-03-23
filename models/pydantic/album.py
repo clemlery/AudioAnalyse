@@ -1,11 +1,11 @@
 # models/album.py
 from pydantic import BaseModel, conlist, constr, conint
 from typing import List, Optional
-from models.data_class_models.restrictions import Restrictions
-from models.data_class_models.external_ids import ExternalIds
-from models.data_class_models.tracks import Tracks
-from models.data_class_models.copyright import Copyright
-from models.data_class_models.simplified_album import SimplifiedAlbum
+from models.pydantic.restrictions import Restrictions
+from models.pydantic.external_ids import ExternalIds
+from models.pydantic.tracks import Tracks
+from models.pydantic.copyright import Copyright
+from models.pydantic.simplified_album import SimplifiedAlbum
 
 
 class Album(SimplifiedAlbum):

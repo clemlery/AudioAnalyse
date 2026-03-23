@@ -5,15 +5,15 @@ from collections import defaultdict
 from sqlalchemy import func, or_
 import pandas as pd
 
-from config import session
+from core.config import session
 from constants.service import RELEASE_TYPE, CSV_BASE_DIR
-from models.sql_alchemy_models.artist_sql_model import Artist
-from models.sql_alchemy_models.metrics import ArtistMetricsSnapshot, TrackMetricsSnapshot
-from models.sql_alchemy_models.release_sql_model import Release
-from models.sql_alchemy_models.spotify_track_sql_model import SpotifyTrack
-from models.sql_alchemy_models.track_sql_model import Track
-from models.sql_alchemy_models.track_stream_day_sql_model import TrackStreamDay
-from models.sql_alchemy_models.track_stream_sql_model import TrackStream
+from models.orm.artist_sql_model import Artist
+from models.orm.metrics import ArtistMetricsSnapshot, TrackMetricsSnapshot
+from models.orm.release_sql_model import Release
+from models.orm.spotify_track_sql_model import SpotifyTrack
+from models.orm.track_sql_model import Track
+from models.orm.track_stream_day_sql_model import TrackStreamDay
+from models.orm.track_stream_sql_model import TrackStream
 
 
 # ---------------------------------------------------------------------------

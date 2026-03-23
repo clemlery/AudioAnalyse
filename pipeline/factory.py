@@ -20,7 +20,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Protocol, Optional
 
-from config import logger
+from core.config import logger
 from constants.scraping import (
     ARTIST_URI,
     ARTIST_URL,
@@ -29,8 +29,8 @@ from constants.scraping import (
     TRACK_URL,
 )
 from dao.service import BrowserManager, get_tokens
-from dao.scrap_dao.spotify_artist_scraper_dao import SpotifyArtistScraperDAO
-from dao.scrap_dao.spotify_track_scraper_dao import SpotifyTrackScraperDAO
+from dao.scrape.spotify_artist_scraper_dao import SpotifyArtistScraperDAO
+from dao.scrape.spotify_track_scraper_dao import SpotifyTrackScraperDAO
 
 
 # =============================

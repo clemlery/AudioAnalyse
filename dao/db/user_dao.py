@@ -1,8 +1,8 @@
 from datetime import datetime
 from dao.base_dao import BaseDbDAO
-from models.sql_alchemy_models.user_sql_model import User
+from models.orm.user_sql_model import User
 from typing import Optional, List
-from config import session
+from core.config import session
 
 
 class UserDAO(BaseDbDAO):

@@ -8,12 +8,12 @@ from typing import Callable
 
 from sqlalchemy import exists
 
-from config import logger, session
-from dao.db_dao.metrics_dao import ArtistMetricsSnapshotDAO, TrackMetricsSnapshotDAO
-from models.sql_alchemy_models.artist_sql_model import Artist
-from models.sql_alchemy_models.metrics import ArtistMetricsSnapshot, TrackMetricsSnapshot
-from models.sql_alchemy_models.spotify_track_sql_model import SpotifyTrack
-from streaming_history_analyser.factory import BrowserTokenSource, ScraperFactory
+from core.config import logger, session
+from dao.db.metrics_dao import ArtistMetricsSnapshotDAO, TrackMetricsSnapshotDAO
+from models.orm.artist_sql_model import Artist
+from models.orm.metrics import ArtistMetricsSnapshot, TrackMetricsSnapshot
+from models.orm.spotify_track_sql_model import SpotifyTrack
+from pipeline.factory import BrowserTokenSource, ScraperFactory
 
 
 def _artists_without_metrics() -> list[Artist]:

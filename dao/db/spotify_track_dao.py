@@ -1,6 +1,6 @@
 from dao.base_dao import BaseDbDAO
-from config import session
-from models.sql_alchemy_models.spotify_track_sql_model import SpotifyTrack
+from core.config import session
+from models.orm.spotify_track_sql_model import SpotifyTrack
 from typing import Dict, List, Optional
 
 

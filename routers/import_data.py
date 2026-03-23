@@ -58,12 +58,12 @@ def _status_fragment(request: Request) -> HTMLResponse:
 # ── Background ingestion ──────────────────────────────────────────────────────
 
 def _run_ingestion(user_id: str, filenames: list[str]) -> None:
-    from streaming_history_analyser.ingest import (
+    from pipeline.ingest import (
         delete_log_backup,
         load_streaming_history_file,
     )
-    from streaming_history_analyser.process import IngestContext, exploit_streaming_history
-    from streaming_history_analyser.factory import BrowserTokenSource, ScraperFactory
+    from pipeline.process import IngestContext, exploit_streaming_history
+    from pipeline.factory import BrowserTokenSource, ScraperFactory
 
     try:
         delete_log_backup()
@@ -120,8 +120,8 @@ def import_page(request: Request):
 
 @router.get("/callback")
 def oauth_callback(request: Request, code: str):
-    from dao.db_dao.user_dao import UserDAO
-    from dao.fetch_dao.user_fetch_dao import UserFetchDao
+    from dao.db.user_dao import UserDAO
+    from dao.fetch.user_fetch_dao import UserFetchDao
 
     token_resp = requests.post(
         TOKEN_URL,
@@ -231,8 +231,8 @@ def _scrape_status_fragment(request: Request) -> HTMLResponse:
 
 
 def _run_scraping() -> None:
-    from streaming_history_analyser.scrape import run_metrics_scraping
-    from streaming_history_analyser.factory import BrowserTokenSource, ScraperFactory
+    from pipeline.scrape import run_metrics_scraping
+    from pipeline.factory import BrowserTokenSource, ScraperFactory
 
     try:
         scraper_factory = ScraperFactory(BrowserTokenSource())

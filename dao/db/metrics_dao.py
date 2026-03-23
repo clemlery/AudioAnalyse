@@ -1,6 +1,6 @@
-from config import session
+from core.config import session
 from dao.base_dao import BaseDbDAO
-from models.sql_alchemy_models.metrics import (
+from models.orm.metrics import (
     ArtistMetricsSnapshot,
     TrackMetricsSnapshot,
 )

@@ -1,7 +1,7 @@
 # models/context.py
 from pydantic import BaseModel, HttpUrl, constr
 from typing import Literal
-from models.data_class_models.external_urls import ExternalUrls
+from models.pydantic.external_urls import ExternalUrls
 
 
 class Context(BaseModel):

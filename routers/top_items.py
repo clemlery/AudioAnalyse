@@ -5,15 +5,15 @@ from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
-from config import session as db_session
+from core.config import session as db_session
 from constants.service import ORDER_TYPE
 from routers.utils import df_to_csv_uri, fig_to_b64
-from streaming_history_analyser.reporting import (
+from pipeline.reporting import (
     get_artists_data,
     get_releases_data,
     get_tracks_data,
 )
-from streaming_history_analyser.visualize import top_artists, top_releases, top_tracks
+from pipeline.visualize import top_artists, top_releases, top_tracks
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")

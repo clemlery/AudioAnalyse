@@ -1,7 +1,7 @@
 # models/saved_track.py
 from datetime import datetime, timezone
 from pydantic import BaseModel, field_validator
-from models.data_class_models.track import Track
+from models.pydantic.track import Track
 
 
 class SavedTrack(BaseModel):

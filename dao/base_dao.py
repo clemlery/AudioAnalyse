@@ -1,6 +1,6 @@
 # base_dao.py
 
-from config import logger
+from core.config import logger
 from typing import Callable, Optional, Dict, Any
 import requests
 from functools import wraps

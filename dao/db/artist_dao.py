@@ -1,7 +1,7 @@
 from dao.base_dao import BaseDbDAO
-from config import session
-from models.sql_alchemy_models.artist_sql_model import Artist as ArtistDbModel
-from models.data_class_models.artist import Artist as ArtistDataClasseModel
+from core.config import session
+from models.orm.artist_sql_model import Artist as ArtistDbModel
+from models.pydantic.artist import Artist as ArtistDataClasseModel
 from typing import Optional, List
 
 

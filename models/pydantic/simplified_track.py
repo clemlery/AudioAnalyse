@@ -1,12 +1,12 @@
 # models/simplified_track.py
 from typing import Optional, Literal
 from pydantic import BaseModel, conlist, constr, conint, PositiveInt, HttpUrl
-from models.data_class_models.simplified_artist import SimplifiedArtist
-from models.data_class_models.external_urls import ExternalUrls
-from models.data_class_models.linked_from import LinkedFromTrack
-from models.data_class_models.restrictions import Restrictions
-from models.data_class_models.spotify_id import SpotifyID
-from models.data_class_models.available_markets import AvailableMarkets
+from models.pydantic.simplified_artist import SimplifiedArtist
+from models.pydantic.external_urls import ExternalUrls
+from models.pydantic.linked_from import LinkedFromTrack
+from models.pydantic.restrictions import Restrictions
+from models.pydantic.spotify_id import SpotifyID
+from models.pydantic.available_markets import AvailableMarkets
 
 
 class SimplifiedTrack(BaseModel):

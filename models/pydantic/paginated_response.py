@@ -1,7 +1,7 @@
 # models/paginated_response.py
 from typing import Optional
 from pydantic import BaseModel, conint, HttpUrl
-from models.data_class_models.cursors import Cursors
+from models.pydantic.cursors import Cursors
 
 
 class PaginatedResponse(BaseModel):

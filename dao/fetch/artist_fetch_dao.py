@@ -9,8 +9,8 @@ from typing import Any, Dict, List, Optional, Set
 from pydantic import ValidationError
 
 from dao.base_dao import BaseFetchDAO
-from models.data_class_models.artist import Artist
-from models.data_class_models.artists import Artists
+from models.pydantic.artist import Artist
+from models.pydantic.artists import Artists
 from constants.api import (
     SPOTIFY_ARTISTS_URL,
     SPOTIFY_TOP_ARTISTS_URL,

@@ -1,10 +1,10 @@
 # models/tracks.py
 from typing import Union, List
 from pydantic import model_validator, ConfigDict
-from models.data_class_models.simplified_track import SimplifiedTrack
-from models.data_class_models.paginated_response import PaginatedResponse
-from models.data_class_models.playlist_track import PlaylistTrack
-from models.data_class_models.saved_track import SavedTrack
+from models.pydantic.simplified_track import SimplifiedTrack
+from models.pydantic.paginated_response import PaginatedResponse
+from models.pydantic.playlist_track import PlaylistTrack
+from models.pydantic.saved_track import SavedTrack
 
 
 class Tracks(PaginatedResponse):

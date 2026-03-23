@@ -6,7 +6,7 @@ Each method corresponds to a Spotify API REST endpoint returning user informatio
 
 from constants.api import SPOTIFY_USER_PROFILE_URL
 from dao.base_dao import BaseFetchDAO
-from models.data_class_models.user import User
+from models.pydantic.user import User
 
 
 class UserFetchDao(BaseFetchDAO):

@@ -1,6 +1,6 @@
 from dao.base_dao import BaseDbDAO
-from config import session
-from models.sql_alchemy_models.track_stream_day_sql_model import TrackStreamDay
+from core.config import session
+from models.orm.track_stream_day_sql_model import TrackStreamDay
 from typing import Optional, List
 from datetime import datetime
 from sqlalchemy import desc

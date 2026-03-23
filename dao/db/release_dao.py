@@ -1,7 +1,7 @@
 from dao.base_dao import BaseDbDAO
-from config import session
-from models.sql_alchemy_models.release_sql_model import Release
-from models.data_class_models.album import Album
+from core.config import session
+from models.orm.release_sql_model import Release
+from models.pydantic.album import Album
 from typing import List, Optional
 
 

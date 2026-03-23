@@ -1,7 +1,7 @@
 # models/saved_album.py
 from pydantic import BaseModel, field_validator
 from datetime import datetime, timezone
-from models.data_class_models.album import Album
+from models.pydantic.album import Album
 
 
 class SavedAlbum(BaseModel):

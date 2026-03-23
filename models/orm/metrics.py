@@ -10,7 +10,7 @@ from sqlalchemy import (
     UniqueConstraint,
     text,
 )
-from models.sql_alchemy_models.base import Base
+from models.orm.base import Base
 from sqlalchemy.orm import relationship
 
 track_id_seq = Sequence(

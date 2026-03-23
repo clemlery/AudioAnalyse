@@ -14,16 +14,16 @@ Examples:
 import sys
 
 # Force model registration before session is used
-from models.sql_alchemy_models.track_sql_model import Track
-from models.sql_alchemy_models.artist_sql_model import Artist
-from models.sql_alchemy_models.release_sql_model import Release
-from models.sql_alchemy_models.spotify_track_sql_model import SpotifyTrack
-from models.sql_alchemy_models.track_stream_sql_model import TrackStream
-from models.sql_alchemy_models.track_stream_day_sql_model import TrackStreamDay
-from models.sql_alchemy_models.metrics import ArtistMetricsSnapshot, TrackMetricsSnapshot
-from models.sql_alchemy_models.user_sql_model import User
+from models.orm.track_sql_model import Track
+from models.orm.artist_sql_model import Artist
+from models.orm.release_sql_model import Release
+from models.orm.spotify_track_sql_model import SpotifyTrack
+from models.orm.track_stream_sql_model import TrackStream
+from models.orm.track_stream_day_sql_model import TrackStreamDay
+from models.orm.metrics import ArtistMetricsSnapshot, TrackMetricsSnapshot
+from models.orm.user_sql_model import User
 
-from streaming_history_analyser.dataset_importer import SqliteDatasetImporter
+from pipeline.dataset_importer import SqliteDatasetImporter
 
 if __name__ == "__main__":
     sqlite_path = sys.argv[1] if len(sys.argv) > 1 else "data/dataset/extracted.sqlite"

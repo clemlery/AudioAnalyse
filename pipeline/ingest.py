@@ -5,11 +5,11 @@ import os
 from constants.service import UPLOADS_PATH, UPLOADS_TEST_PATH
 import re
 import time
-from config import logger
+from core.config import logger
 import os
 import glob
 
-from streaming_history_analyser.process import exploit_streaming_history, IngestContext
+from pipeline.process import exploit_streaming_history, IngestContext
 
 FILENAME_RE = re.compile(
     r"^Streaming_History_Audio_(?:\d{4}(?:-\d{4})*)_\d{1,2}\.json$"

@@ -2,8 +2,8 @@
 from datetime import datetime, timezone
 from typing import Union
 from pydantic import BaseModel, field_validator, conlist, constr
-from models.data_class_models.linked_from import LinkedFromUser
-from models.data_class_models.track import Track
+from models.pydantic.linked_from import LinkedFromUser
+from models.pydantic.track import Track
 
 
 class PlaylistTrack(BaseModel):

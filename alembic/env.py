@@ -10,15 +10,15 @@ import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from models.sql_alchemy_models.base import Base
-from models.sql_alchemy_models.track_sql_model import Track
-from models.sql_alchemy_models.spotify_track_sql_model import SpotifyTrack
-from models.sql_alchemy_models.release_sql_model import Release
-from models.sql_alchemy_models.artist_sql_model import Artist
-from models.sql_alchemy_models.track_stream_sql_model import TrackStream
-from models.sql_alchemy_models.track_stream_day_sql_model import TrackStreamDay
-from models.sql_alchemy_models.user_sql_model import User
-from models.sql_alchemy_models.metrics import (
+from models.orm.base import Base
+from models.orm.track_sql_model import Track
+from models.orm.spotify_track_sql_model import SpotifyTrack
+from models.orm.release_sql_model import Release
+from models.orm.artist_sql_model import Artist
+from models.orm.track_stream_sql_model import TrackStream
+from models.orm.track_stream_day_sql_model import TrackStreamDay
+from models.orm.user_sql_model import User
+from models.orm.metrics import (
     TrackMetricsSnapshot,
     ArtistMetricsSnapshot,
 )

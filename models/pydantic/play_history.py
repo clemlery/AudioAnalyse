@@ -2,8 +2,8 @@
 from datetime import datetime, timezone
 from typing import Optional, Union
 from pydantic import BaseModel, field_validator
-from models.data_class_models.track import Track
-from models.data_class_models.context import Context
+from models.pydantic.track import Track
+from models.pydantic.context import Context
 
 
 class PlayHistory(BaseModel):

@@ -3,42 +3,42 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional, Tuple
-from auth import ConfigAuth
+from core.auth import ConfigAuth
 from constants.service import RELEASE_TYPE
 
 # We import all the Fetch DAOs
-from dao.db_dao.track_stream_day_dao import TrackStreamDayDAO
-from dao.fetch_dao.track_fetch_dao import TrackFetchDAO
-from dao.fetch_dao.artist_fetch_dao import ArtistFetchDAO
-from dao.fetch_dao.album_fetch_dao import AlbumFetchDAO
-from dao.fetch_dao.user_fetch_dao import UserFetchDao
+from dao.db.track_stream_day_dao import TrackStreamDayDAO
+from dao.fetch.track_fetch_dao import TrackFetchDAO
+from dao.fetch.artist_fetch_dao import ArtistFetchDAO
+from dao.fetch.album_fetch_dao import AlbumFetchDAO
+from dao.fetch.user_fetch_dao import UserFetchDao
 
 # We import all the DB DAOs
-from dao.db_dao.track_stream_dao import TrackStreamDAO
-from dao.db_dao.artist_dao import ArtistDAO
-from dao.db_dao.release_dao import ReleaseDAO
-from dao.db_dao.track_dao import TrackDAO
-from dao.db_dao.spotify_track_dao import SpotifyTrackDAO
-from dao.db_dao.user_dao import UserDAO
-from dao.db_dao.metrics_dao import TrackMetricsSnapshotDAO, ArtistMetricsSnapshotDAO
+from dao.db.track_stream_dao import TrackStreamDAO
+from dao.db.artist_dao import ArtistDAO
+from dao.db.release_dao import ReleaseDAO
+from dao.db.track_dao import TrackDAO
+from dao.db.spotify_track_dao import SpotifyTrackDAO
+from dao.db.user_dao import UserDAO
+from dao.db.metrics_dao import TrackMetricsSnapshotDAO, ArtistMetricsSnapshotDAO
 
 # We import all the scrap DAOs
-from dao.scrap_dao.spotify_artist_scraper_dao import SpotifyArtistScraperDAO
-from dao.scrap_dao.spotify_track_scraper_dao import SpotifyTrackScraperDAO
+from dao.scrape.spotify_artist_scraper_dao import SpotifyArtistScraperDAO
+from dao.scrape.spotify_track_scraper_dao import SpotifyTrackScraperDAO
 
 # We import the association table
-from models.data_class_models.album import Album
-from models.sql_alchemy_models.association import track_artist, release_artist
+from models.pydantic.album import Album
+from models.orm.association import track_artist, release_artist
 
 # We import the logger global variable
-from config import logger
+from core.config import logger
 
 # Other imports
-from config import session
+from core.config import session
 from sqlalchemy import select
-from models.data_class_models.track import Track
-from streaming_history_analyser.factory import BrowserTokenSource, ScraperFactory
-from streaming_history_analyser.service import (
+from models.pydantic.track import Track
+from pipeline.factory import BrowserTokenSource, ScraperFactory
+from pipeline.service import (
     chunk_list,
     define_release_type,
     verify_token,

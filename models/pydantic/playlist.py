@@ -1,11 +1,11 @@
 # models/playlist.py
 from pydantic import BaseModel, HttpUrl, constr, conlist
 from typing import Literal, Optional, List
-from models.data_class_models.external_urls import ExternalUrls
-from models.data_class_models.tracks import Tracks
-from models.data_class_models.owner import Owner
-from models.data_class_models.image import Image
-from models.data_class_models.spotify_id import SpotifyID
+from models.pydantic.external_urls import ExternalUrls
+from models.pydantic.tracks import Tracks
+from models.pydantic.owner import Owner
+from models.pydantic.image import Image
+from models.pydantic.spotify_id import SpotifyID
 
 
 class Playlist(BaseModel):
