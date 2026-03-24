@@ -47,10 +47,22 @@ class SqliteDatasetImporter:
             "releases_created": 0,
             "errors": 0,
         }
+        # Committed caches — only contain IDs that have been committed to the DB
         self._artist_cache: dict[str, int] = {}
         self._release_cache: dict[str, int] = {}
         self._track_cache: set[str] = set()
         self._release_artist_cache: set[tuple] = set()
+
+        # Pending since last commit — invalidated on rollback
+        self._pending_artist_keys: set[str] = set()
+        self._pending_release_keys: set[str] = set()
+        self._pending_track_keys: set[str] = set()
+        self._pending_release_artist_keys: set[tuple] = set()
+        self._pending_stats: dict[str, int] = {
+            "tracks_created": 0,
+            "artists_created": 0,
+            "releases_created": 0,
+        }
 
     # ------------------------------------------------------------------
     # Public entry point
@@ -87,16 +99,17 @@ class SqliteDatasetImporter:
 
             try:
                 self._import_row(row, spotify_track_id)
-                self._track_cache.add(spotify_track_id)
                 processed += 1
             except Exception as e:
                 logger.error(f"[sqlite_importer] Error on track {spotify_track_id}: {e}")
                 session.rollback()
+                self._on_rollback()
                 self.stats["errors"] += 1
                 continue
 
             if processed % COMMIT_EVERY == 0:
                 session.commit()
+                self._on_commit()
                 committed += processed
                 elapsed = time.perf_counter() - t0
                 logger.info(
@@ -114,6 +127,7 @@ class SqliteDatasetImporter:
         conn.close()
 
         session.commit()
+        self._on_commit()
         elapsed = time.perf_counter() - t0
         logger.info(
             f"[sqlite_importer] Done in {elapsed:.1f}s | "
@@ -124,6 +138,39 @@ class SqliteDatasetImporter:
             f"errors={self.stats['errors']}"
         )
         return self.stats
+
+    # ------------------------------------------------------------------
+    # Commit / rollback cache management
+    # ------------------------------------------------------------------
+
+    def _on_commit(self) -> None:
+        """Called after session.commit() — promote pending entries to committed state."""
+        self._pending_artist_keys.clear()
+        self._pending_release_keys.clear()
+        self._pending_track_keys.clear()
+        self._pending_release_artist_keys.clear()
+        self._pending_stats = {"tracks_created": 0, "artists_created": 0, "releases_created": 0}
+
+    def _on_rollback(self) -> None:
+        """Called after session.rollback() — purge stale pending entries from caches."""
+        for key in self._pending_artist_keys:
+            self._artist_cache.pop(key, None)
+        for key in self._pending_release_keys:
+            self._release_cache.pop(key, None)
+        for key in self._pending_track_keys:
+            self._track_cache.discard(key)
+        for key in self._pending_release_artist_keys:
+            self._release_artist_cache.discard(key)
+
+        self.stats["tracks_created"] -= self._pending_stats["tracks_created"]
+        self.stats["artists_created"] -= self._pending_stats["artists_created"]
+        self.stats["releases_created"] -= self._pending_stats["releases_created"]
+
+        self._pending_artist_keys.clear()
+        self._pending_release_keys.clear()
+        self._pending_track_keys.clear()
+        self._pending_release_artist_keys.clear()
+        self._pending_stats = {"tracks_created": 0, "artists_created": 0, "releases_created": 0}
 
     # ------------------------------------------------------------------
     # Row processing
@@ -144,7 +191,6 @@ class SqliteDatasetImporter:
         track = Track(name=track_name, duration_ms=duration_ms)
         session.add(track)
         session.flush()
-        self.stats["tracks_created"] += 1
 
         session.execute(
             track_artist.insert().values(track_id=track.id, artist_id=artist_db_id)
@@ -156,6 +202,12 @@ class SqliteDatasetImporter:
             release_id=release_db_id,
         ))
         session.flush()
+
+        # Track only after all flushes succeed
+        self._track_cache.add(spotify_track_id)
+        self._pending_track_keys.add(spotify_track_id)
+        self.stats["tracks_created"] += 1
+        self._pending_stats["tracks_created"] += 1
 
     # ------------------------------------------------------------------
     # Helpers
@@ -169,7 +221,7 @@ class SqliteDatasetImporter:
         if not artist:
             artist = Artist(
                 spotify_id=spotify_id,
-                name=name,
+                name=name[:255],
                 followers=0,
                 popularity=None,
                 genres=[],
@@ -178,8 +230,12 @@ class SqliteDatasetImporter:
             session.add(artist)
             session.flush()
             self.stats["artists_created"] += 1
+            self._pending_stats["artists_created"] += 1
+            self._pending_artist_keys.add(spotify_id)
 
         self._artist_cache[spotify_id] = artist.id
+        # If the artist already existed in DB (not newly created), it's already committed
+        # so we don't add it to pending — it will survive any rollback.
         return artist.id
 
     def _get_or_create_release(self, album_name: str, spotify_id: str) -> int:
@@ -191,7 +247,7 @@ class SqliteDatasetImporter:
             release = Release(
                 spotify_id=spotify_id,
                 release_type="album",
-                name=album_name,
+                name=album_name[:255],
                 popularity=None,
                 image="",
                 release_date="unknown",
@@ -200,6 +256,8 @@ class SqliteDatasetImporter:
             session.add(release)
             session.flush()
             self.stats["releases_created"] += 1
+            self._pending_stats["releases_created"] += 1
+            self._pending_release_keys.add(spotify_id)
 
         self._release_cache[spotify_id] = release.id
         return release.id
@@ -217,3 +275,4 @@ class SqliteDatasetImporter:
                 release_artist.insert().values(release_id=release_id, artist_id=artist_id)
             )
         self._release_artist_cache.add(key)
+        self._pending_release_artist_keys.add(key)
