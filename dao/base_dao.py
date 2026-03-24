@@ -63,35 +63,33 @@ def logging_func_scrap_dao(fn: Callable) -> Callable:
 
 # We create the mother class of BaseDbDAO, BaseFetchDAO and BaseScrapDAO
 class BaseDAO:
-    pass
+    _logging_decorator: Optional[Callable] = None
+
+    # We apply the logging decorator to all subclasses
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        decorator = None
+        for base in cls.__mro__:
+            if "_logging_decorator" in base.__dict__ and base._logging_decorator is not None:
+                decorator = base._logging_decorator
+                break
+        if decorator is None:
+            return
+        for attr, value in cls.__dict__.items():
+            if isinstance(value, staticmethod):
+                func = value.__func__
+                if not func.__name__.startswith("__"):
+                    setattr(cls, attr, staticmethod(decorator(func)))
+            elif callable(value) and not value.__name__.startswith("__"):
+                setattr(cls, attr, decorator(value))
 
 
 class BaseDbDAO(BaseDAO):
-    # We apply the logging decorator to all subclasses
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
-        for attr, value in cls.__dict__.items():
-            if (
-                callable(value)
-                and not value.__name__.startswith("__")
-                and isinstance(value, staticmethod)
-            ):
-                func = value.__func__
-                setattr(cls, attr, staticmethod(logging_func_db_dao(func)))
+    _logging_decorator = staticmethod(logging_func_db_dao)
 
 
 class BaseFetchDAO(BaseDAO):
-    # We apply the logging decorator to all subclasses
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
-        for attr, value in cls.__dict__.items():
-            if (
-                callable(value)
-                and not value.__name__.startswith("__")
-                and isinstance(value, staticmethod)
-            ):
-                func = value.__func__
-                setattr(cls, attr, staticmethod(logging_func_fetch_dao(func)))
+    _logging_decorator = staticmethod(logging_func_fetch_dao)
 
     def _request(
         url: str, access_token: str, params: Optional[Dict[str, Any]] = None
@@ -110,6 +108,8 @@ class BaseFetchDAO(BaseDAO):
 
 
 class BaseScrapDAO(BaseDAO):
+    _logging_decorator = staticmethod(logging_func_fetch_dao)  # TODO: replace with logging_func_scrap_dao
+
     def __init__(
         self,
         access_token: str,
@@ -137,10 +137,3 @@ class BaseScrapDAO(BaseDAO):
 
         self.hash_value = hash_value
         self.sess = self.sess
-
-    # We apply the logging decorator to all subclasses
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
-        for attr, value in cls.__dict__.items():
-            if callable(value) and not value.__name__.startswith("__"):
-                setattr(cls, attr, logging_func_fetch_dao(value))
